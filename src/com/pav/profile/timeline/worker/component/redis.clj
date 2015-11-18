@@ -58,10 +58,10 @@
          (let [evt (c/<!! event-channel)
                new-msg (:new-msg evt)
                timeline-key (str "timeline:" (:user_id new-msg))]
-           (log/info (str "Writing new message " new-msg))
-           (wcar redis-conn (car/zadd timeline-key (:timestamp new-msg) (-> (ch/generate-string new-msg)
-                                                                            msg/pack)))
-           (wcar redis-conn (car/lrem processing-queue 1 (:encoded-msg evt))))
+           (try
+             (wcar redis-conn (car/zadd timeline-key (:timestamp new-msg) (-> (ch/generate-string new-msg) msg/pack)))
+             (wcar redis-conn (car/lrem processing-queue 1 (:encoded-msg evt)))
+           (catch Exception e (log/info (str "Error publishing message to timeline: " timeline-key ", " e)))))
          (recur))))))
 
 (defrecord RedisTimelinePublisher [redis-url processing-queue publish-evt-chan num-of-consumers]
