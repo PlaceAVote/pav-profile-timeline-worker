@@ -50,12 +50,12 @@
                             :num-of-consumers num-of-consumers}))
 
 
-(defn start-publishing-timeline-events [redis-url processing-queue event-channel num-of-consumers]
+(defn start-publishing-timeline-events [redis-url processing-queue processed-evt-chan num-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
     (dotimes [_ num-of-consumers]
       (c/thread
        (loop []
-         (let [evt (c/<!! event-channel)
+         (let [evt (c/<!! processed-evt-chan)
                new-msg (:new-msg evt)
                timeline-key (str "timeline:" (:user_id new-msg))]
            (try
@@ -64,11 +64,11 @@
            (catch Exception e (log/info (str "Error publishing message to timeline: " timeline-key ", " e)))))
          (recur))))))
 
-(defrecord RedisTimelinePublisher [redis-url processing-queue publish-evt-chan num-of-consumers]
+(defrecord RedisTimelinePublisher [redis-url processing-queue processed-evt-chan num-of-consumers]
   comp/Lifecycle
   (start [component]
     (log/info "Starting RedisTimelinePublisher")
-    (start-publishing-timeline-events redis-url processing-queue publish-evt-chan num-of-consumers)
+    (start-publishing-timeline-events redis-url processing-queue processed-evt-chan num-of-consumers)
     (log/info "Started RedisTimelinePublisher")
     component)
   (stop [component]
