@@ -16,7 +16,8 @@
   (map #(case (:type %)
          "vote"           (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
          "comment"        (->  (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
-                               (update-in [:new-msg] (fn [v] (assoc v :score 0))))
+                               (update-in [:new-msg] (fn [v]
+                                                       (assoc v :score 0 :user_id (:author v)))))
          "followinguser"  (->> (retrieve-users-first-last-names dy-conn table-name (:following_id (:decoded-msg %)))
                                (merge (:decoded-msg %))
                                (assoc % :new-msg))
