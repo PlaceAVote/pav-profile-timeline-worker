@@ -25,5 +25,5 @@
                                              {:publish-evt-chan :publish-evt-chan})
    :redis-timeline-publisher (component/using (new-redis-timeline-publisher (:redis-url env) (:processing-queue env) 3)
                                               {:processed-evt-chan :redis-chan})
-   :dynamodb-timeline-publisher (component/using (new-dynamodb-timeline-publisher client-opts (:dynamo-user-table-name env))
+   :dynamodb-timeline-publisher (component/using (new-dynamodb-timeline-publisher client-opts (:dynamo-usertimeline-table-name env))
                                                  {:processed-evt-chan :dynamo-chan})))

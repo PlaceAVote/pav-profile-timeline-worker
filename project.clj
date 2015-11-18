@@ -26,6 +26,7 @@
                          :es-url "http://localhost:9200"
                          :dynamo-endpoint "http://localhost:8000"
                          :dynamo-user-table-name "users"
+                         :dynamo-usertimeline-table-name "usertimeline"
                          :access-key "Whatever"
                          :secret-key "whatever"
                          :input-queue "redismq::queue_name::user-event-input"
