@@ -10,6 +10,7 @@
   (assoc event :bill_title (retrieve-bill-title es-conn index (:bill_id event))))
 
 (defn retrieve-users-first-last-names [conn table-name user_id]
+  (println (far/get-item conn table-name {:user_id user_id} {:attrs [:first_name :last_name]}))
   (far/get-item conn table-name {:user_id user_id} {:attrs [:first_name :last_name]}))
 
 (defn event-transducer [es-conn index dy-conn table-name]
