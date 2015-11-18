@@ -7,3 +7,11 @@
 
 (defn add-bill-title [es-conn index event]
   (assoc event :bill_title (retrieve-bill-title es-conn index (:bill_id event))))
+
+(defn event-transducer [es-conn index]
+  (map #(case (:type %)
+         "vote"    (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
+         "comment" (-> (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
+                       (update-in [:new-msg] (fn [v]
+                                               (assoc v :score 0))))
+         nil)))

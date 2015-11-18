@@ -2,28 +2,34 @@
   (:require [com.stuartsierra.component :as comp]
             [taoensso.carmine :as car :refer (wcar)]
             [clojure.core.async :as c]
+            [cheshire.core :as ch]
             [msgpack.core :as msg]
             [msgpack.clojure-extensions]))
 
+(defn unpack-event [evt]
+  (if-not (nil? evt)
+    (let [decoded-msg (-> (msg/unpack evt)
+                          (ch/parse-string true))]
+      {:encoded-msg evt
+       :decoded-msg decoded-msg
+       :type (:type decoded-msg)})))
 
 (defn start-processing-events [redis-url input-queue processing-queue event-channel num-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
-    (wcar redis-conn (car/lpush input-queue (-> {:type "vote" :msg "hello there" :bill_id "hr2-114" :user_id "user101"}
-                                                msg/pack)))
     (dotimes [_ num-of-consumers]
       (c/thread
        (loop []
          (let [evt (-> (wcar redis-conn (car/brpoplpush input-queue processing-queue 1000))
-                       msg/unpack)]
+                       unpack-event)]
            (if-not (nil? evt)
              (c/>!! event-channel evt)))
          (recur))))))
 
-(defrecord RedisQueueConsumer [redis-url input-queue processing-queue event-channel num-of-consumers]
+(defrecord RedisQueueConsumer [redis-url input-queue processing-queue publish-evt-chan num-of-consumers]
   comp/Lifecycle
   (start [component]
     (println "Starting RedisQueueConsumer")
-    (start-processing-events redis-url input-queue processing-queue event-channel num-of-consumers)
+    (start-processing-events redis-url input-queue processing-queue publish-evt-chan num-of-consumers)
     component)
   (stop [component]
     (println "Stopping RedisQueueConsumer")
@@ -42,15 +48,18 @@
       (c/thread
        (loop []
          (let [evt (c/<!! event-channel)
-               timeline-key (str "timeline:" (:user_id evt))]
-           (wcar redis-conn (car/zadd timeline-key (:timestamp evt) (msg/pack evt))))
+               new-msg (:new-msg evt)
+               timeline-key (str "timeline:" (:user_id new-msg))]
+           (wcar redis-conn (car/zadd timeline-key (:timestamp new-msg) (-> (ch/generate-string new-msg)
+                                                                            msg/pack)))
+           (wcar redis-conn (car/lrem processing-queue 1 (:encoded-msg evt))))
          (recur))))))
 
-(defrecord RedisTimelinePublisher [redis-url processing-queue processed-evt-channel num-of-consumers]
+(defrecord RedisTimelinePublisher [redis-url processing-queue publish-evt-chan num-of-consumers]
   comp/Lifecycle
   (start [component]
     (println "Starting RedisTimelinePublisher")
-    (start-publishing-timeline-events redis-url processing-queue processed-evt-channel num-of-consumers)
+    (start-publishing-timeline-events redis-url processing-queue publish-evt-chan num-of-consumers)
     component)
   (stop [component]
     (println "Stopping RedisTimelinePublisher")
