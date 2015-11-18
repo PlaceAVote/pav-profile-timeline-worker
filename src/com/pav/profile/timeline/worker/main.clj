@@ -9,4 +9,4 @@
   (alter-var-root #'system
                   (constantly (new-system)))
   (alter-var-root #'system component/start)
-  (while true (println "I'm alive")))
+  (while true))
