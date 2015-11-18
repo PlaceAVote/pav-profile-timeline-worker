@@ -20,7 +20,7 @@
          "followinguser"  (->> (retrieve-users-first-last-names dy-conn table-name (:following_id (:decoded-msg %)))
                                (merge (:decoded-msg %))
                                (assoc % :new-msg))
-         "followeduser"   (->> (retrieve-users-first-last-names dy-conn table-name (:follower_id (:decoded-msg %)))
+         "followedbyuser"   (->> (retrieve-users-first-last-names dy-conn table-name (:follower_id (:decoded-msg %)))
                                (merge (:decoded-msg %))
                                (assoc % :new-msg))
          nil)))
