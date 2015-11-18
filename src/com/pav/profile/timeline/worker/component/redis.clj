@@ -8,23 +8,21 @@
             [clojure.tools.logging :as log]))
 
 (defn unpack-event [evt]
-  (if-not (nil? evt)
-    (let [decoded-msg (-> (msg/unpack evt)
-                          (ch/parse-string true))]
-      {:encoded-msg evt
-       :decoded-msg decoded-msg
-       :type (:type decoded-msg)})))
+  (let [decoded-msg (-> (msg/unpack evt)
+                        (ch/parse-string true))]
+    {:encoded-msg evt
+     :decoded-msg decoded-msg
+     :type (:type decoded-msg)}))
 
 (defn start-processing-events [redis-url input-queue processing-queue event-channel num-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
     (dotimes [_ num-of-consumers]
       (c/thread
        (loop []
-         (let [evt (-> (wcar redis-conn (car/brpoplpush input-queue processing-queue 1000))
-                       unpack-event)]
-           (if-not (nil? evt)
+         (let [evt (wcar redis-conn (car/brpoplpush input-queue processing-queue 1000))]
+           (when evt
              (try
-               (c/>!! event-channel evt)
+               (c/>!! event-channel (unpack-event evt))
              (catch Exception e (log/error e)))))
          (recur))))))
 
