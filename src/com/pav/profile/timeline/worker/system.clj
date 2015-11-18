@@ -7,9 +7,13 @@
                                                                      new-redis-timeline-publisher]]
             [com.pav.profile.timeline.worker.functions.functions :refer [event-transducer]]))
 
+(def client-opts {:access-key (:access-key env)
+                  :secret-key (:secret-key env)
+                  :endpoint (:dynamo-endpoint env)})
+
 (defn new-system []
   (component/system-map 
-   :publish-evt-chan (chan 100 (event-transducer (esr/connect (:es-url env)) "congress"))
+   :publish-evt-chan (chan 100 (event-transducer (esr/connect (:es-url env)) "congress" client-opts (:dynamo-user-table-name env)))
    :es-conn (esr/connect (:es-url env))
    :timeline-event-listener (component/using (new-redis-queue-consumer (:redis-url env) (:input-queue env) (:processing-queue env) 3)
                                              {:publish-evt-chan :publish-evt-chan})

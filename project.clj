@@ -24,6 +24,10 @@
              :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]
                    :env {:redis-url "redis://127.0.0.1:6379"
                          :es-url "http://localhost:9200"
+                         :dynamo-endpoint "http://localhost:8000"
+                         :dynamo-user-table-name "users"
+                         :access-key "Whatever"
+                         :secret-key "whatever"
                          :input-queue "redismq::queue_name::user-event-input"
                          :processing-queue "redismq::queue_name::user-event-processing"}
                    :source-paths ["dev" "src"]}})
