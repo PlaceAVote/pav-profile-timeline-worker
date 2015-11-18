@@ -4,7 +4,8 @@
             [clojure.core.async :as c]
             [cheshire.core :as ch]
             [msgpack.core :as msg]
-            [msgpack.clojure-extensions]))
+            [msgpack.clojure-extensions]
+            [clojure.tools.logging :as log]))
 
 (defn unpack-event [evt]
   (if-not (nil? evt)
@@ -28,11 +29,11 @@
 (defrecord RedisQueueConsumer [redis-url input-queue processing-queue publish-evt-chan num-of-consumers]
   comp/Lifecycle
   (start [component]
-    (println "Starting RedisQueueConsumer")
+    (log/info "Starting RedisQueueConsumer")
     (start-processing-events redis-url input-queue processing-queue publish-evt-chan num-of-consumers)
     component)
   (stop [component]
-    (println "Stopping RedisQueueConsumer")
+    (log/info "Stopping RedisQueueConsumer")
     component))
 
 (defn new-redis-queue-consumer [redis-url input-queue processing-queue num-of-consumers]
@@ -58,11 +59,11 @@
 (defrecord RedisTimelinePublisher [redis-url processing-queue publish-evt-chan num-of-consumers]
   comp/Lifecycle
   (start [component]
-    (println "Starting RedisTimelinePublisher")
+    (log/info "Starting RedisTimelinePublisher")
     (start-publishing-timeline-events redis-url processing-queue publish-evt-chan num-of-consumers)
     component)
   (stop [component]
-    (println "Stopping RedisTimelinePublisher")
+    (log/info "Stopping RedisTimelinePublisher")
     component))
 
 (defn new-redis-timeline-publisher [redis-url processing-queue num-of-consumers]
