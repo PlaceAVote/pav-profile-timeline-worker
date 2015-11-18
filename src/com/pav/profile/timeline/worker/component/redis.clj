@@ -14,12 +14,18 @@
      :decoded-msg decoded-msg
      :type (:type decoded-msg)}))
 
+(defn poll-queue [redis-conn input-queue processing-queue timeout]
+  (try
+    (wcar redis-conn (car/brpoplpush input-queue processing-queue timeout))
+  (catch Exception e
+    (log/info (str "Connection with queue has dropped.  Attempting reconnect " e)))))
+
 (defn start-processing-events [redis-url input-queue processing-queue event-channel num-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
     (dotimes [_ num-of-consumers]
       (c/thread
        (loop []
-         (let [evt (wcar redis-conn (car/brpoplpush input-queue processing-queue 1000))]
+         (let [evt (poll-queue redis-conn input-queue processing-queue 1000)]
            (when evt
              (try
                (c/>!! event-channel (unpack-event evt))
