@@ -23,7 +23,9 @@
          (let [evt (-> (wcar redis-conn (car/brpoplpush input-queue processing-queue 1000))
                        unpack-event)]
            (if-not (nil? evt)
-             (c/>!! event-channel evt)))
+             (try
+               (c/>!! event-channel evt)
+             (catch Exception e (log/error e)))))
          (recur))))))
 
 (defrecord RedisQueueConsumer [redis-url input-queue processing-queue publish-evt-chan num-of-consumers]
