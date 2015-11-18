@@ -31,6 +31,7 @@
   (start [component]
     (log/info "Starting RedisQueueConsumer")
     (start-processing-events redis-url input-queue processing-queue publish-evt-chan num-of-consumers)
+    (log/info "Started RedisQueueConsumer")
     component)
   (stop [component]
     (log/info "Stopping RedisQueueConsumer")
@@ -61,6 +62,7 @@
   (start [component]
     (log/info "Starting RedisTimelinePublisher")
     (start-publishing-timeline-events redis-url processing-queue publish-evt-chan num-of-consumers)
+    (log/info "Started RedisTimelinePublisher")
     component)
   (stop [component]
     (log/info "Stopping RedisTimelinePublisher")
