@@ -4,7 +4,7 @@
             [user]))
 
 (against-background [(before :facts (flush-redis))]
-  (fact "Publish a user vote event, confirm it is in the users redis/dynamo timeline"
+  (future-fact "Publish a user vote event, confirm it is in the users redis/dynamo timeline"
         (try
           (let [vote-evt {:bill_id "hr2-114" :created_at 14567 :timestamp 14567 :user_id "user101" :vote true :vote-id "vote1"
                           :type "vote"}]
