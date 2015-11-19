@@ -45,21 +45,22 @@
                    {:handler  (fn [{:keys [message]}]
                                 (let [event (-> (unpack-event message)
                                                 parse-event)]
-                                  (when event
+                                  (log/info event)
+                                  (if event
                                     (do (publish-to-redis-timeline redis-conn event)
-                                        (publish-to-dynamo-timeline dynamo-opts timeline-table event)))))
+                                        (publish-to-dynamo-timeline dynamo-opts timeline-table event))
+                                    {:status :error})))
+                    :monitor (car-mq/monitor-fn input-queue 1000 5000)
                     :nthreads number-of-consumers})))
 
 (defrecord RedisQueueConsumer [redis-url input-queue dynamo-opts timeline-table num-of-consumers]
   comp/Lifecycle
   (start [component]
     (log/info "Starting RedisQueueConsumer")
-    (process-events redis-url dynamo-opts timeline-table input-queue num-of-consumers)
-    (log/info "Started RedisQueueConsumer")
-    component)
+    (assoc component :worker (process-events redis-url dynamo-opts timeline-table input-queue num-of-consumers)))
   (stop [component]
     (log/info "Stopping RedisQueueConsumer")
-    component))
+    (update-in component [:worker] car-mq/stop)))
 
 (defn new-redis-queue-consumer [redis-url input-queue dynamo-opts timeline-table num-of-consumers]
   (map->RedisQueueConsumer {:redis-url redis-url
