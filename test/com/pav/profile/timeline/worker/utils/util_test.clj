@@ -14,6 +14,7 @@
                   :endpoint (:dynamo-endpoint env)})
 
 (def timeline-table (:dynamo-usertimeline-table-name env))
+(def user-table (:dynamo-user-table-name env))
 
 (def queue (:input-queue env))
 
@@ -27,7 +28,36 @@
        (mapv msg/unpack)
        (mapv #(ch/parse-string % true))))
 
+(defn retrieve-dynamo-timeline [user_id]
+  (far/query dynamo-opts timeline-table {:user_id [:eq user_id]}))
+
 (defn flush-redis []
   (wcar redis-conn
         (car/flushall)
         (car/flushdb)))
+
+(defn delete-tables []
+  (println "deleting table")
+  (try
+    (far/delete-table dynamo-opts user-table)
+    (far/delete-table dynamo-opts timeline-table)
+  (catch Exception e (println e))))
+
+(defn create-tables []
+  (println "creating table")
+  (try
+    (far/create-table dynamo-opts user-table [:user_id :s]
+                      {:gsindexes [{:name "user-email-idx"
+                                    :hash-keydef [:email :s]
+                                    :throughput {:read 5 :write 10}}]
+                       :throughput {:read 5 :write 10}
+                       :block? true})
+    (far/create-table dynamo-opts timeline-table [:user_id :s]
+                      {:range-keydef [:timestamp :n]
+                       :throughput {:read 5 :write 10}
+                       :block? true})
+    (catch Exception e (println e))))
+
+(defn clean-dynamo-tables []
+  (delete-tables)
+  (create-tables))
