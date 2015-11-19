@@ -1,7 +1,20 @@
 (ns com.pav.profile.timeline.worker.functions.functions
   (:require [clojurewerkz.elastisch.rest.document :as esd]
-            [taoensso.faraday :as far])
+            [clojurewerkz.elastisch.rest :as esr]
+            [taoensso.faraday :as far]
+            [cheshire.core :as ch]
+            [msgpack.core :as msg]
+            [msgpack.clojure-extensions]
+            [environ.core :refer [env]])
   (:import (java.util Date)))
+
+(def es-conn (esr/connect (:es-url env)))
+
+(def client-opts {:access-key (:access-key env)
+                  :secret-key (:secret-key env)
+                  :endpoint (:dynamo-endpoint env)})
+
+(def user-table (:dynamo-user-table-name env))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -10,31 +23,33 @@
 (defn add-bill-title [es-conn index event]
   (assoc event :bill_title (retrieve-bill-title es-conn index (:bill_id event))))
 
-(defn retrieve-users-first-last-names [conn table-name user_id]
-  (far/get-item conn table-name {:user_id user_id} {:attrs [:first_name :last_name]}))
+(defn add-users-first-last-names [evt user_id]
+  (-> (far/get-item client-opts user-table {:user_id user_id} {:attrs [:first_name :last_name]})
+      (merge evt)))
 
-(defn event-transducer [es-conn index dy-conn table-name]
-  (map #(case (:type %)
-         "vote"           (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
-         "comment"        (->  (assoc % :new-msg (add-bill-title es-conn index (:decoded-msg %)))
-                               (update-in [:new-msg] (fn [v]
-                                                       (assoc v :score 0 :user_id (:author v)))))
-         "followinguser"  (->> (retrieve-users-first-last-names dy-conn table-name (:following_id (:decoded-msg %)))
-                               (merge (:decoded-msg %))
-                               (assoc % :new-msg))
-         "followedbyuser" (->> (retrieve-users-first-last-names dy-conn table-name (:follower_id (:decoded-msg %)))
-                               (merge (:decoded-msg %))
-                               (assoc % :new-msg))
-         "likecomment"    (->  (->> (retrieve-users-first-last-names dy-conn table-name (:author (:decoded-msg %)))
-                                    (merge (:decoded-msg %))
-                                    (assoc % :new-msg))
-                               (update-in [:new-msg] (fn [v] (assoc v :bill_title (retrieve-bill-title es-conn index (:bill_id v))
-                                                                      :user_id (:author v)
-                                                                      :timestamp (.getTime (Date.))))))
-         "dislikecomment" (->  (->> (retrieve-users-first-last-names dy-conn table-name (:author (:decoded-msg %)))
-                                    (merge (:decoded-msg %))
-                                    (assoc % :new-msg))
-                               (update-in [:new-msg] (fn [v] (assoc v :bill_title (retrieve-bill-title es-conn index (:bill_id v))
-                                                                      :user_id (:author v)
-                                                                      :timestamp (.getTime (Date.))))))
-         nil)))
+(defn parse-vote [evt]
+  (add-bill-title es-conn "congress" evt))
+
+(defn parse-comment [evt]
+  (-> (add-bill-title es-conn "congress" evt)
+      (assoc :score 0 :user_id (:author evt))))
+
+(defn parse-followinguser [evt]
+  (add-users-first-last-names evt (:following_id evt)))
+
+(defn parse-followedbyuser [evt]
+  (add-users-first-last-names evt (:follower_id evt)))
+
+(defn parse-like-comment [evt]
+  (-> (add-bill-title es-conn "congress" evt)
+      (add-users-first-last-names (:author evt))
+      (assoc :timestamp (.getTime (Date.)) :user_id (:author evt))))
+
+(defn parse-dislike-comment [evt]
+  (-> (add-bill-title es-conn "congress" evt)
+      (add-users-first-last-names (:author evt))
+      (assoc :timestamp (.getTime (Date.)) :user_id (:author evt))))
+
+(defn unpack-event [evt]
+  (-> (msg/unpack evt)
+      (ch/parse-string true)))

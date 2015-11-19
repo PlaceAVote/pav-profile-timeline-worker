@@ -21,7 +21,8 @@
   :main com.pav.profile.timeline.worker.main
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :profiles {:uberjar {:aot [com.pav.profile.timeline.worker.main]}
-             :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]
+             :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
+                                  [midje "1.7.0"]]
                    :env {:redis-url "redis://127.0.0.1:6379"
                          :es-url "http://localhost:9200"
                          :dynamo-endpoint "http://localhost:8000"
@@ -31,4 +32,5 @@
                          :secret-key "whatever"
                          :input-queue "redismq::queue_name::user-event-input"
                          :processing-queue "redismq::queue_name::user-event-processing"}
-                   :source-paths ["dev" "src"]}})
+                   :source-paths ["dev" "src"]
+                   :plugins [[lein-midje "3.1.3"]]}})
