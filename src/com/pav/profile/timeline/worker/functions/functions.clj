@@ -1,6 +1,7 @@
 (ns com.pav.profile.timeline.worker.functions.functions
   (:require [clojurewerkz.elastisch.rest.document :as esd]
-            [taoensso.faraday :as far]))
+            [taoensso.faraday :as far])
+  (:import (java.util Date)))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -28,10 +29,12 @@
                                     (merge (:decoded-msg %))
                                     (assoc % :new-msg))
                                (update-in [:new-msg] (fn [v] (assoc v :bill_title (retrieve-bill-title es-conn index (:bill_id v))
-                                                                      :user_id (:author v)))))
+                                                                      :user_id (:author v)
+                                                                      :timestamp (.getTime (Date.))))))
          "dislikecomment" (->  (->> (retrieve-users-first-last-names dy-conn table-name (:author (:decoded-msg %)))
                                     (merge (:decoded-msg %))
                                     (assoc % :new-msg))
                                (update-in [:new-msg] (fn [v] (assoc v :bill_title (retrieve-bill-title es-conn index (:bill_id v))
-                                                                      :user_id (:author v)))))
+                                                                      :user_id (:author v)
+                                                                      :timestamp (.getTime (Date.))))))
          nil)))

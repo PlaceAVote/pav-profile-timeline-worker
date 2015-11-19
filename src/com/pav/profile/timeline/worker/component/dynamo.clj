@@ -11,7 +11,7 @@
         (when evt
           (try
             (far/put-item client-opts table-name (:new-msg evt))
-          (catch Exception e (log/info (str "Error writing to table " table-name ", with " (:new-msg evt) ", " e))))))
+          (catch Exception e (log/error (str "Error writing to table " table-name ", with " (:new-msg evt) ", " e))))))
       (recur))))
 
 (defrecord DynamoDBPublisher [client-opts table-name processed-evt-chan]
