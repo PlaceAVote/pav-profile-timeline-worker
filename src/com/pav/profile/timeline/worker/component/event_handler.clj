@@ -43,14 +43,14 @@
   (let [redis-conn {:spec {:uri redis-url}}]
     (car-mq/worker redis-conn input-queue
                    {:handler  (fn [{:keys [message]}]
-                                (let [event (-> (unpack-event message)
-                                                parse-event)]
-                                  (log/info event)
+                                (let [unpacked-evt (unpack-event message)
+                                      event (parse-event unpacked-evt)]
                                   (if event
                                     (do (publish-to-redis-timeline redis-conn event)
                                         (publish-to-dynamo-timeline dynamo-opts timeline-table event))
-                                    {:status :error})))
-                    :monitor (car-mq/monitor-fn input-queue 1000 5000)
+                                    (do (log/error "Message is not a valid event type " unpacked-evt)
+                                        {:status :error}))))
+                    :monitor  (car-mq/monitor-fn input-queue 1000 5000)
                     :nthreads number-of-consumers})))
 
 (defrecord RedisQueueConsumer [redis-url input-queue dynamo-opts timeline-table num-of-consumers]

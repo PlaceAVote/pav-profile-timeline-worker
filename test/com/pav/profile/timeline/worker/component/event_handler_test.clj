@@ -86,4 +86,17 @@
             (first (retrieve-dynamo-timeline "user101")) => (contains likecomment-evt))
           (catch Exception e (println e))
           (finally
+            (user/stop))))
+
+  (fact "Publish an event with an invalid event type, confirm it is NOT in the users timeline"
+        (try
+          (let [likecomment-evt {:bill_id "hr2-114" :author_img_url "http://img.url"
+                                 :author "user101" :body "Comment Body" :parent_id nil :has_children false
+                                 :score 0 :type "invalidtype"}]
+            (user/go)
+            (queue-event likecomment-evt)
+            (Thread/sleep 4000)
+            (retrieve-dynamo-timeline "user101") => [])
+          (catch Exception e (println e))
+          (finally
             (user/stop)))))
