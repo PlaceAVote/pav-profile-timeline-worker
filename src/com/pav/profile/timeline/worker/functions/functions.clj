@@ -43,12 +43,12 @@
 (defn parse-like-comment [evt]
   (-> (add-bill-title es-conn "congress" evt)
       (add-users-first-last-names (:author evt))
-      (assoc :timestamp (.getTime (Date.)) :user_id (:author evt))))
+      (assoc :timestamp (.getTime (Date.)))))
 
 (defn parse-dislike-comment [evt]
   (-> (add-bill-title es-conn "congress" evt)
       (add-users-first-last-names (:author evt))
-      (assoc :timestamp (.getTime (Date.)) :user_id (:author evt))))
+      (assoc :timestamp (.getTime (Date.)))))
 
 (defn unpack-event [evt]
   (-> (msg/unpack evt)

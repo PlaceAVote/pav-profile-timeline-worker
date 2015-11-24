@@ -3,4 +3,5 @@ target/
 .idea/
 .lein-repl-history
 .lein-env
+.lein-failures
 .nrepl-port

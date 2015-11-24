@@ -64,12 +64,12 @@
         (try
           (let [likecomment-evt {:bill_id "hr2-114" :author_img_url "http://img.url"
                                  :author "user101" :body "Comment Body" :parent_id nil :has_children false
-                                 :score 0 :type "likecomment"}]
+                                 :score 0 :type "likecomment" :user_id "user102"}]
             (user/go)
             (queue-event likecomment-evt)
             (Thread/sleep 4000)
-            (first (retrieve-redis-timeline "user101")) => (contains likecomment-evt)
-            (first (retrieve-dynamo-timeline "user101")) => (contains likecomment-evt))
+            (first (retrieve-redis-timeline "user102")) => (contains likecomment-evt)
+            (first (retrieve-dynamo-timeline "user102")) => (contains likecomment-evt))
           (catch Exception e (println e))
           (finally
             (user/stop))))
@@ -78,12 +78,12 @@
         (try
           (let [likecomment-evt {:bill_id "hr2-114" :author_img_url "http://img.url"
                                  :author "user101" :body "Comment Body" :parent_id nil :has_children false
-                                 :score 0 :type "dislikecomment"}]
+                                 :score 0 :type "dislikecomment" :user_id "user102"}]
             (user/go)
             (queue-event likecomment-evt)
             (Thread/sleep 4000)
-            (first (retrieve-redis-timeline "user101")) => (contains likecomment-evt)
-            (first (retrieve-dynamo-timeline "user101")) => (contains likecomment-evt))
+            (first (retrieve-redis-timeline "user102")) => (contains likecomment-evt)
+            (first (retrieve-dynamo-timeline "user102")) => (contains likecomment-evt))
           (catch Exception e (println e))
           (finally
             (user/stop))))

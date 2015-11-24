@@ -30,6 +30,6 @@
                          :dynamo-usertimeline-table-name "usertimeline"
                          :access-key "Whatever"
                          :secret-key "whatever"
-                         :input-queue "redismq::queue_name::user-event-input"}
+                         :input-queue "redismq::queue_name::user-timelineevent-input"}
                    :source-paths ["dev" "src"]
                    :plugins [[lein-midje "3.1.3"]]}})
