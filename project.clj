@@ -28,7 +28,8 @@
                          :dynamo-endpoint "http://localhost:8000"
                          :dynamo-user-table-name "users"
                          :dynamo-usertimeline-table-name "usertimeline"
-                         :comment-details-table-name "comment-details"
+												 :dynamo-usernotification-table-name "usernotifications"
+                         :dynamo-comment-details-table-name "comment-details"
                          :access-key "Whatever"
                          :secret-key "whatever"
                          :input-queue "redismq::queue_name::user-timelineevent-input"}

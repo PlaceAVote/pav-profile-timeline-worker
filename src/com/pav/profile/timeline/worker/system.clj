@@ -10,4 +10,6 @@
 (defn new-system []
   (component/system-map
    :timeline-event-consumer (new-redis-queue-consumer (:redis-url env) (:input-queue env)
-															dynamo-opts (:dynamo-usertimeline-table-name env) 3)))
+															dynamo-opts
+															(:dynamo-usertimeline-table-name env) (:dynamo-usernotification-table-name env)
+															(:dynamo-comment-details-table-name env) 3)))

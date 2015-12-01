@@ -13,9 +13,10 @@
                   :secret-key (:secret-key env)
                   :endpoint (:dynamo-endpoint env)})
 
-(def timeline-table (:dynamo-usertimeline-table-name env))
 (def user-table (:dynamo-user-table-name env))
-(def comment-details-table-name (:comment-details-table-name env))
+(def timeline-table (:dynamo-usertimeline-table-name env))
+(def comment-details-table-name (:dynamo-comment-details-table-name env))
+(def notification-table (:dynamo-usernotification-table-name env))
 
 (def queue (:input-queue env))
 
@@ -24,17 +25,8 @@
               msg/pack)]
     (wcar redis-conn (car-mq/enqueue queue v))))
 
-(defn retrieve-redis-timeline [user_id]
-  (->> (wcar redis-conn (car/zrevrange (str "timeline:" user_id) 0 -1))
-       (mapv msg/unpack)
-       (mapv #(ch/parse-string % true))))
-
-(defn retrieve-redis-notification [notification_id]
-  (wcar redis-conn (car/parse-map (car/hgetall notification_id) :keywordize)))
-
-(defn retrieve-redis-notifications [user_id]
-  (->> (wcar redis-conn (car/zrevrange (str "user:" user_id ":notifications") 0 -1))
-       (mapv retrieve-redis-notification)))
+(defn retrieve-dynamo-notifications [user_id]
+	(far/query dynamo-opts notification-table {:user_id [:eq user_id]}))
 
 (defn retrieve-dynamo-timeline [user_id]
   (far/query dynamo-opts timeline-table {:user_id [:eq user_id]}))
@@ -49,6 +41,7 @@
   (try
     (far/delete-table dynamo-opts user-table)
     (far/delete-table dynamo-opts timeline-table)
+    (far/delete-table dynamo-opts notification-table)
     (far/delete-table dynamo-opts comment-details-table-name)
   (catch Exception e (println e))))
 
@@ -56,15 +49,19 @@
   (println "creating table")
   (try
     (far/create-table dynamo-opts user-table [:user_id :s]
-                      {:gsindexes [{:name "user-email-idx"
-                                    :hash-keydef [:email :s]
-                                    :throughput {:read 5 :write 10}}]
-                       :throughput {:read 5 :write 10}
-                       :block? true})
+			{:gsindexes [{:name "user-email-idx"
+										:hash-keydef [:email :s]
+										:throughput {:read 5 :write 10}}]
+			 :throughput {:read 5 :write 10}
+			 :block? true})
     (far/create-table dynamo-opts timeline-table [:user_id :s]
-                      {:range-keydef [:timestamp :n]
-                       :throughput {:read 5 :write 10}
-                       :block? true})
+			{:range-keydef [:timestamp :n]
+			 :throughput {:read 5 :write 10}
+			 :block? true})
+		(far/create-table dynamo-opts notification-table [:user_id :s]
+			{:range-keydef [:timestamp :n]
+			 :throughput {:read 5 :write 10}
+			 :block? true})
     (far/create-table dynamo-opts comment-details-table-name [:comment_id :s]
       {:gsindexes [{:name "bill-comment-idx"
                     :hash-keydef [:bill_id :s]
@@ -78,6 +75,5 @@
   (delete-tables)
   (create-tables))
 
-(defn create-comment [{:keys [comment_id] :as comment}]
-  (wcar redis-conn (car/hmset* (str "comment:" comment_id ":details") comment))
+(defn create-comment [comment]
   (far/put-item dynamo-opts comment-details-table-name comment))

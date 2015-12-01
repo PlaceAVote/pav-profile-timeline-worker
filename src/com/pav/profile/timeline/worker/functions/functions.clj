@@ -9,8 +9,7 @@
 						[clojure.tools.logging :as log]
 						[taoensso.carmine :as car :refer (wcar)]
 						[com.pav.profile.timeline.worker.events.notifications :refer [new-comment-reply-notification]])
-  (:import (java.util Date)
-					 (java.util UUID)))
+  (:import (java.util Date)))
 
 (def es-conn (esr/connect (:es-url env)))
 
@@ -82,20 +81,17 @@
     {:status :success}
     (catch Exception e (log/error (str "Error writing to table " table-name ", with " evt ", " e)))))
 
-(defn publish-redis-notification [redis-conn {:keys [user_id timestamp] :as notification}]
-	(let [user-notification-key (str "user:" user_id ":notifications")
-				notification-record-key (str "notification:" (.toString (UUID/randomUUID)) ":record")]
-		(wcar redis-conn (car/zadd user-notification-key timestamp notification-record-key))
-		(wcar redis-conn (car/hmset* notification-record-key notification))))
+(defn publish-dynamo-notification [dynamo-opts notification-table notification]
+	(far/put-item dynamo-opts notification-table notification))
 
-(defn publish-reply-notifications [redis-conn{:keys [parent_id] :as evt}]
+(defn publish-reply-notifications [dynamo-opts notification-table comment-details-table {:keys [parent_id] :as evt}]
 	(if parent_id
-		(let [parent-comment (wcar redis-conn (car/parse-map (car/hgetall (str "comment:" parent_id ":details")) :keywordize))]
+		(let [parent-comment (far/get-item dynamo-opts comment-details-table {:comment_id parent_id})]
 			(when parent-comment
 				(let [notification (new-comment-reply-notification parent-comment evt)]
-					(publish-redis-notification redis-conn notification))))))
+					(publish-dynamo-notification dynamo-opts notification-table notification))))))
 
-(defn publish-user-notifications [redis-conn {:keys [type] :as evt}]
+(defn publish-user-notifications [dynamo-opts notification-table comment-details-table {:keys [type] :as evt}]
 	(case type
-		"comment" (publish-reply-notifications redis-conn evt)
+		"comment" (publish-reply-notifications dynamo-opts notification-table comment-details-table evt)
 		nil))
