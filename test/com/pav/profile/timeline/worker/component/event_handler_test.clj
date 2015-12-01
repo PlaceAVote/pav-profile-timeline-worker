@@ -33,6 +33,31 @@
           (finally
             (user/stop))))
 
+	(fact "Publish a user comment event, when user comment has a parent_id, then publish a comment reply notification
+				to the user associated with the parent comment."
+		(try
+			(let [parent-comment {:comment_id "comment:1" :bill_id "hr2-114" :author "user102"
+														:author_first_name "John" :author_last_name "Rambo"
+														:timestamp (.getTime (Date.)) :has_children true :parent_id  nil
+														:body "I'm the parent" :score 1 }
+						expected-reply-notification {:user_id "user102" :author "user101" :author_first_name "Peter" :bill_id "hr2-114"
+																				 :author_last_name "Pan" :type "commentreply" :read false :comment_id "comment:2"
+																				 :timestamp 14567}
+						_ (create-comment parent-comment)
+						comment-evt {:bill_id "hr2-114" :timestamp 14567 :author_img_url "http://img.url"
+												 :author "user101" :author_first_name "Peter" :author_last_name "Pan"
+												 :body "I'm the reply" :parent_id "comment:1" :has_children false :comment_id "comment:2"
+												 :score 0 :type "comment"}]
+				(user/go)
+				(queue-event comment-evt)
+				(Thread/sleep 4000)
+				(first (retrieve-redis-timeline "user101")) => (contains comment-evt)
+				(first (retrieve-dynamo-timeline "user101")) => (contains comment-evt)
+				(first (retrieve-redis-notifications "user102")) => (contains expected-reply-notification))
+			(catch Exception e (println e))
+			(finally
+				(user/stop))))
+
   (fact "Publish a user following event, confirm it is in the users timeline"
         (try
           (let [followinguser-evt {:type      "followinguser" :user_id "user101" :following_id "user102"

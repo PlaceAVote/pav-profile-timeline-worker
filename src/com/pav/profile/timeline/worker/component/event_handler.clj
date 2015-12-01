@@ -1,43 +1,18 @@
 (ns com.pav.profile.timeline.worker.component.event-handler
-  (:require [com.stuartsierra.component :as comp]
-            [taoensso.carmine :as car :refer (wcar)]
-            [taoensso.carmine.message-queue :as car-mq]
-            [taoensso.faraday :as far]
-            [cheshire.core :as ch]
-            [msgpack.core :as msg]
-            [msgpack.clojure-extensions]
-            [clojure.tools.logging :as log]
-            [com.pav.profile.timeline.worker.functions.functions :refer [unpack-event
-                                                                         parse-vote
-                                                                         parse-comment
-                                                                         parse-followinguser
-                                                                         parse-followedbyuser
-                                                                         parse-like-comment
-                                                                         parse-dislike-comment]]))
+	(:require [com.stuartsierra.component :as comp]
+						[taoensso.carmine :as car :refer (wcar)]
+						[taoensso.carmine.message-queue :as car-mq]
+						[msgpack.clojure-extensions]
+						[clojure.tools.logging :as log]
+						[com.pav.profile.timeline.worker.functions.functions :refer [unpack-event
+																																				 publish-to-redis-timeline
+																																				 publish-to-dynamo-timeline
+																																				 parse-event
+																																				 publish-user-notifications]]))
 
-(defn publish-to-redis-timeline [redis-conn evt]
-  (let [timeline-key (str "timeline:" (:user_id evt))]
-    (try
-      (wcar redis-conn (car/zadd timeline-key (:timestamp evt) (-> (ch/generate-string evt)
-                                                                   msg/pack)))
-      {:status :success}
-    (catch Exception e (log/error (str "Error publishing message to timeline: " timeline-key ", " e))))))
-
-(defn publish-to-dynamo-timeline [client-opts table-name evt]
-  (try
-    (far/put-item client-opts table-name evt)
-    {:status :success}
-    (catch Exception e (log/error (str "Error writing to table " table-name ", with " evt ", " e)))))
-
-(defn parse-event [event]
-  (case (:type event)
-    "vote" (parse-vote event)
-    "comment" (parse-comment event)
-    "followinguser" (parse-followinguser event)
-    "followedbyuser" (parse-followedbyuser event)
-    "likecomment" (parse-like-comment event)
-    "dislikecomment" (parse-dislike-comment event)
-    nil))
+(defn publish-timeline-events [redis-conn dynamo-opts timeline-table event]
+	(publish-to-redis-timeline redis-conn event)
+	(publish-to-dynamo-timeline dynamo-opts timeline-table event))
 
 (defn process-events [redis-url dynamo-opts timeline-table input-queue number-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
@@ -46,8 +21,8 @@
                                 (let [unpacked-evt (unpack-event message)
                                       event (parse-event unpacked-evt)]
                                   (if event
-                                    (do (publish-to-redis-timeline redis-conn event)
-                                        (publish-to-dynamo-timeline dynamo-opts timeline-table event))
+                                    (do (publish-timeline-events redis-conn dynamo-opts timeline-table event)
+                                        (publish-user-notifications redis-conn event))
                                     (do (log/error "Message is not a valid event type " unpacked-evt)
                                         {:status :error}))))
                     :monitor  (car-mq/monitor-fn input-queue 1000 5000)

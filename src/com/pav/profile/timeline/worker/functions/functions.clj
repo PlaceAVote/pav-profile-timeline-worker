@@ -5,8 +5,12 @@
             [cheshire.core :as ch]
             [msgpack.core :as msg]
             [msgpack.clojure-extensions]
-            [environ.core :refer [env]])
-  (:import (java.util Date)))
+            [environ.core :refer [env]]
+						[clojure.tools.logging :as log]
+						[taoensso.carmine :as car :refer (wcar)]
+						[com.pav.profile.timeline.worker.events.notifications :refer [new-comment-reply-notification]])
+  (:import (java.util Date)
+					 (java.util UUID)))
 
 (def es-conn (esr/connect (:es-url env)))
 
@@ -53,3 +57,45 @@
 (defn unpack-event [evt]
   (-> (msg/unpack evt)
       (ch/parse-string true)))
+
+(defn parse-event [{:keys [type] :as event}]
+	(case type
+		"vote" (parse-vote event)
+		"comment" (parse-comment event)
+		"followinguser" (parse-followinguser event)
+		"followedbyuser" (parse-followedbyuser event)
+		"likecomment" (parse-like-comment event)
+		"dislikecomment" (parse-dislike-comment event)
+		nil))
+
+(defn publish-to-redis-timeline [redis-conn evt]
+  (let [timeline-key (str "timeline:" (:user_id evt))]
+    (try
+      (wcar redis-conn (car/zadd timeline-key (:timestamp evt) (-> (ch/generate-string evt)
+                                                                 msg/pack)))
+      {:status :success}
+      (catch Exception e (log/error (str "Error publishing message to timeline: " timeline-key ", " e))))))
+
+(defn publish-to-dynamo-timeline [client-opts table-name evt]
+  (try
+    (far/put-item client-opts table-name evt)
+    {:status :success}
+    (catch Exception e (log/error (str "Error writing to table " table-name ", with " evt ", " e)))))
+
+(defn publish-redis-notification [redis-conn {:keys [user_id timestamp] :as notification}]
+	(let [user-notification-key (str "user:" user_id ":notifications")
+				notification-record-key (str "notification:" (.toString (UUID/randomUUID)) ":record")]
+		(wcar redis-conn (car/zadd user-notification-key timestamp notification-record-key))
+		(wcar redis-conn (car/hmset* notification-record-key notification))))
+
+(defn publish-reply-notifications [redis-conn{:keys [parent_id] :as evt}]
+	(if parent_id
+		(let [parent-comment (wcar redis-conn (car/parse-map (car/hgetall (str "comment:" parent_id ":details")) :keywordize))]
+			(when parent-comment
+				(let [notification (new-comment-reply-notification parent-comment evt)]
+					(publish-redis-notification redis-conn notification))))))
+
+(defn publish-user-notifications [redis-conn {:keys [type] :as evt}]
+	(case type
+		"comment" (publish-reply-notifications redis-conn evt)
+		nil))
