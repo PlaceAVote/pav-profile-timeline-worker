@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [com.stuartsierra/component "0.2.1"]
                  [org.clojure/core.async "0.2.374"]
-                 [com.taoensso/carmine "2.12.0" :exclusions [org.clojure/tools.reader]]
+                 [com.taoensso/carmine "2.12.1" :exclusions [org.clojure/tools.reader]]
                  [com.taoensso/faraday "1.8.0" :exclusions [org.clojure/tools.reader]]
                  [org.clojure/tools.logging "0.3.1"]
                  [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
