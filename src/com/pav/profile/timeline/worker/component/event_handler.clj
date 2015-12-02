@@ -5,7 +5,6 @@
 						[msgpack.clojure-extensions]
 						[clojure.tools.logging :as log]
 						[com.pav.profile.timeline.worker.functions.functions :refer [unpack-event
-																																				 publish-to-redis-timeline
 																																				 publish-to-dynamo-timeline
 																																				 parse-event
 																																				 publish-user-notifications]]))
@@ -19,9 +18,11 @@
                    {:handler  (fn [{:keys [message]}]
                                 (let [unpacked-evt (unpack-event message)
                                       event (parse-event unpacked-evt)]
+																	(log/info "Event: " event)
                                   (if event
                                     (do (publish-timeline-events dynamo-opts timeline-table event)
-                                        (publish-user-notifications dynamo-opts notification-table comment-details-table event))
+                                        (publish-user-notifications dynamo-opts notification-table comment-details-table event)
+																				{:status :success})
                                     (do (log/error "Message is not a valid event type " unpacked-evt)
                                         {:status :error}))))
                     :monitor  (car-mq/monitor-fn input-queue 1000 5000)

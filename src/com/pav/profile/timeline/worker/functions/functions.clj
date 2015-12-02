@@ -67,18 +67,9 @@
 		"dislikecomment" (parse-dislike-comment event)
 		nil))
 
-(defn publish-to-redis-timeline [redis-conn evt]
-  (let [timeline-key (str "timeline:" (:user_id evt))]
-    (try
-      (wcar redis-conn (car/zadd timeline-key (:timestamp evt) (-> (ch/generate-string evt)
-                                                                 msg/pack)))
-      {:status :success}
-      (catch Exception e (log/error (str "Error publishing message to timeline: " timeline-key ", " e))))))
-
 (defn publish-to-dynamo-timeline [client-opts table-name evt]
   (try
     (far/put-item client-opts table-name evt)
-    {:status :success}
     (catch Exception e (log/error (str "Error writing to table " table-name ", with " evt ", " e)))))
 
 (defn publish-dynamo-notification [dynamo-opts notification-table notification]
