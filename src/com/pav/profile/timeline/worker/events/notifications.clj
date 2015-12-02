@@ -5,7 +5,8 @@
 																		 bill_id type read comment_id timestamp])
 
 (defn new-comment-reply-notification [{:keys [author]}
-																		 {:keys [author_first_name author_last_name bill_id comment_id timestamp] :as comment-event}]
+																		 {:keys [author_first_name author_last_name bill_id comment_id timestamp
+																						 author_img_url body] :as comment-event}]
 	(map->CommentReplyNotification {:notification_id   (.toString (UUID/randomUUID))
 																	:user_id           author
 																	:author            (:author comment-event)
@@ -15,4 +16,6 @@
 																	:type              "commentreply"
 																	:bill_id           bill_id
 																	:comment_id        comment_id
+																	:author_img_url 	 author_img_url
+																	:body 						 body
 																	:timestamp         (bigint timestamp)}))
