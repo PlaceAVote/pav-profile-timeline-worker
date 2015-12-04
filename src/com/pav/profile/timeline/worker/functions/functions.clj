@@ -79,12 +79,16 @@
       (ch/parse-string true)))
 
 (defn publish-to-dynamo-timeline [timeline-event]
+	(log/info "Timeline event being published " timeline-event)
   (try
     (far/put-item client-opts timeline-table timeline-event)
-    (catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
+	(catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
 
 (defn publish-dynamo-notification [notification-event]
-	(far/put-item client-opts notification-table notification-event))
+	(log/info "Notification event being published " notification-event)
+	(try
+		(far/put-item client-opts notification-table notification-event)
+	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
 
 (defn build-email-header [template]
 	{:key mandril-api-key :template_name template
