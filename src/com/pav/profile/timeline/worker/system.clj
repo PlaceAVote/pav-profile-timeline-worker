@@ -8,5 +8,4 @@
 (defn new-system []
 	(component/system-map
 		:timeline-event-consumer (new-redis-queue-consumer (:redis-url env) (:timeline-queue env) timeline-builder 3)
-		:notification-event-consumer (new-redis-queue-consumer (:redis-url env) (:notification-queue env) notification-builder 3))
-	)
+		:notification-event-consumer (new-redis-queue-consumer (:redis-url env) (:notification-queue env) notification-builder 3)))
