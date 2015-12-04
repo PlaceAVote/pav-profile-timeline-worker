@@ -7,8 +7,7 @@
             [msgpack.clojure-extensions]
             [environ.core :refer [env]]
 						[clojure.tools.logging :as log]
-						[taoensso.carmine :as car :refer (wcar)]
-						[com.pav.profile.timeline.worker.events.notifications :refer [new-comment-reply-notification]])
+						[taoensso.carmine :as car :refer (wcar)])
   (:import (java.util Date)))
 
 (def es-conn (esr/connect (:es-url env)))

@@ -11,11 +11,13 @@
 	 bill_id					 :- s/Str
 	 bill_title        :- s/Str
 	 read 						 :- s/Bool
+	 comment_id     	 :- s/Str
+	 body 						 :- s/Str
 	 timestamp 				 :- s/Str
 	 user_id 				   :- s/Str])
 
 (s/defn new-comment-reply-notification :- CommentReplyNotification
 	[{:keys [notification_id type author author_first_name author_last_name author_img_url bill_id bill_title read
-					 timestamp user_id] :as event}]
+					 comment_id body timestamp user_id] :as event}]
 	(CommentReplyNotification. notification_id type author author_first_name author_last_name author_img_url
-		bill_id bill_title read timestamp user_id))
+		bill_id bill_title read comment_id body timestamp user_id))

@@ -1,0 +1,58 @@
+{
+  "votes": [],
+  "urls": {
+    "congress": "http://beta.congress.gov/bill/114th/house-bill/620",
+    "govtrack": "https://www.govtrack.us/congress/bills/114/hr620",
+    "opencongress": "https://www.opencongress.org/bill/hr620-114"
+  },
+  "_id":"hr620-114",
+  "bill_id": "hr620-114",
+  "last_action_at": "2015-01-28",
+  "number": "620",
+  "short_title": "CEO-Employee Paycheck Fairness Act of 2015",
+  "history": {
+    "active": false,
+    "awaiting_signature": false,
+    "enacted": false,
+    "vetoed": false
+  },
+  "congress": "114",
+  "keywords": [
+    "Corporate finance and management",
+    "Economic performance and conditions",
+    "Income tax deductions",
+    "Inflation and prices",
+    "Taxation",
+    "Wages and earnings"
+  ],
+  "summary": "CEO-Employee Paycheck Fairness Act of 2015 \n\nAmends the Internal Revenue Code to deny a publicly held corporation a tax deduction for the payment of performance-based remuneration in excess of $1 million to any of its current or former officers or directors if such corporation does not meet the pay fairness requirement established by this Act. Deems the pay fairness requirement to be satisfied if: (1) the average compensation paid by the employer for all applicable U.S. employees for the taxable year exceeds the inflation and productivity growth adjusted average (i.e., $118,450 in 2015) of such compensation for the preceding taxable year; and (2) the aggregate compensation paid by the employer to or for all applicable employees for the taxable year is not less than the aggregate of such compensation for the preceding taxable year.",
+  "updated_at": "2015-08-23T06:24:20-04:00",
+  "bill_type": "hr",
+  "last_vote": null,
+  "status": "REFERRED",
+  "official_title": "To amend the Internal Revenue Code of 1986 to expand the denial of deduction for certain excessive employee remuneration.",
+  "related_bill_id": [],
+  "last_action": {
+    "acted_at": "2015-01-28",
+    "committees": [
+      "HSWM"
+    ],
+    "references": [],
+    "status": "REFERRED",
+    "text": "Referred to the House Committee on Ways and Means.",
+    "type": "referral"
+  },
+  "introduced_at": "2015-01-28",
+  "sponsor_id": "01729",
+  "cosponsors_count": 18,
+  "subject": "Taxation",
+  "last_vote_at": null,
+  "sponsor": {
+    "district": "8",
+    "name": "Van Hollen, Chris",
+    "state": "MD",
+    "thomas_id": "01729",
+    "title": "Rep",
+    "type": "person"
+  }
+}

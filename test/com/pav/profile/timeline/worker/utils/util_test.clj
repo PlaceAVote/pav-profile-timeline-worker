@@ -5,7 +5,22 @@
             [environ.core :refer [env]]
             [cheshire.core :as ch]
             [msgpack.core :as msg]
-            [msgpack.clojure-extensions]))
+            [msgpack.clojure-extensions]
+						[clojurewerkz.elastisch.rest :refer [connect]]
+						[clojurewerkz.elastisch.rest.index :refer [create delete update-mapping]]
+						[clojurewerkz.elastisch.rest.bulk :as ersb]))
+
+(def connection (connect))
+(def test-bills [(ch/parse-string (slurp "test-resources/bills/hr2/data.json") true)
+								 (ch/parse-string (slurp "test-resources/bills/hr1104/data.json") true)
+								 (ch/parse-string (slurp "test-resources/bills/hr620/data.json") true)])
+
+(defn clean-congress-index []
+	(delete connection "congress")
+	(create connection "congress"))
+
+(defn bootstrap-bills []
+	(ersb/bulk-with-index-and-type connection "congress" "bill" (ersb/bulk-index test-bills)))
 
 (def redis-conn {:spec {:host "127.0.0.1" :port 6379}})
 
