@@ -11,7 +11,7 @@
           (let [vote-evt {:bill_id "hr2-114" :timestamp 14567 :user_id "user101" :vote true :vote-id "vote1"
                           :type "vote"}]
             (user/go)
-            (queue-event vote-evt)
+            (queue-timeline-event vote-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user101")) => (contains vote-evt))
         (catch Exception e (println e))
@@ -24,7 +24,7 @@
                              :author "user101" :body "Comment Body" :parent_id nil :has_children false
                              :score 0 :type "comment"}]
             (user/go)
-            (queue-event comment-evt)
+            (queue-timeline-event comment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user101")) => (contains comment-evt))
           (catch Exception e (println e))
@@ -36,7 +36,7 @@
           (let [followinguser-evt {:type      "followinguser" :user_id "user101" :following_id "user102"
                                    :timestamp (.getTime (Date.))}]
             (user/go)
-            (queue-event followinguser-evt)
+            (queue-timeline-event followinguser-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user101")) => (contains followinguser-evt))
           (catch Exception e (println e))
@@ -48,7 +48,7 @@
           (let [followinguser-evt {:type      "followedbyuser" :user_id "user102" :follower_id "user101"
                                    :timestamp (.getTime (Date.))}]
             (user/go)
-            (queue-event followinguser-evt)
+            (queue-timeline-event followinguser-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user101")) => nil
             (first (retrieve-dynamo-timeline "user102")) => (contains followinguser-evt))
@@ -62,7 +62,7 @@
                                  :author "user101" :body "Comment Body" :parent_id nil :has_children false
                                  :score 0 :type "likecomment" :user_id "user102"}]
             (user/go)
-            (queue-event likecomment-evt)
+            (queue-timeline-event likecomment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user102")) => (contains likecomment-evt))
           (catch Exception e (println e))
@@ -75,7 +75,7 @@
                                  :author "user101" :body "Comment Body" :parent_id nil :has_children false
                                  :score 0 :type "dislikecomment" :user_id "user102"}]
             (user/go)
-            (queue-event likecomment-evt)
+            (queue-timeline-event likecomment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user102")) => (contains likecomment-evt))
           (catch Exception e (println e))
@@ -88,15 +88,14 @@
                                  :author "user101" :body "Comment Body" :parent_id nil :has_children false
                                  :score 0 :type "invalidtype"}]
             (user/go)
-            (queue-event likecomment-evt)
+            (queue-timeline-event likecomment-evt)
             (Thread/sleep 4000)
             (retrieve-dynamo-timeline "user101") => [])
           (catch Exception e (println e))
           (finally
             (user/stop))))
-	;
-	;(fact "Publish a user comment event, when user comment has a parent_id, then publish a comment reply notification
-	;			to the user associated with the parent comment."
+
+	;(fact "Publish comment reply event, verify comment reply notification is sent to author of parent comment"
 	;	(try
 	;		(let [parent-comment {:comment_id "comment:1" :bill_id "hr2-114" :author "user102"
 	;													:author_first_name "John" :author_last_name "Rambo"
@@ -105,15 +104,14 @@
 	;					comment-evt {:bill_id "hr2-114" :timestamp 14567 :author_img_url "http://img.url"
 	;											 :author "user101" :author_first_name "Peter" :author_last_name "Pan"
 	;											 :body "I'm the reply" :parent_id "comment:1" :has_children false :comment_id "comment:2"
-	;											 :score 0 :type "comment"}
+	;											 :score 0 :type "commentreply"}
 	;					expected-reply-notification {:user_id "user102" :author "user101" :author_first_name "Peter" :bill_id "hr2-114"
 	;																			 :author_last_name "Pan" :type "commentreply" :read false :comment_id "comment:2"
 	;																			 :timestamp 14567 :body "I'm the reply" :author_img_url "http://img.url"}
 	;					_ (create-comment parent-comment)]
 	;			(user/go)
-	;			(queue-event comment-evt)
+	;			(queue-notification comment-evt)
 	;			(Thread/sleep 4000)
-	;			(first (retrieve-dynamo-timeline "user101")) => (contains comment-evt)
 	;			(first (retrieve-dynamo-notifications "user102")) => (contains expected-reply-notification))
 	;		(catch Exception e (println e))
 	;		(finally

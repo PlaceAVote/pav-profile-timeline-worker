@@ -1,5 +1,6 @@
 (ns com.pav.profile.timeline.worker.messages.handlers
 	(:require [com.pav.profile.timeline.worker.messages.timeline :as te]
+						[com.pav.profile.timeline.worker.messages.notification :as ne]
 						[com.pav.profile.timeline.worker.functions.functions :as f]
 						[msgpack.clojure-extensions]
 						[environ.core :refer [env]]))
@@ -15,5 +16,14 @@
 								nil)]
 		(if event
 			(do (f/publish-to-dynamo-timeline event)
+					{:status :success})
+			{:status :error})))
+
+(defn notification-builder [{:keys [type] :as event}]
+	(let [event (case type
+								"commentreply" (ne/new-comment-reply-notification (f/parse-comment-reply-notification event))
+								nil)]
+		(if event
+			(do (f/publish-dynamo-notification event)
 					{:status :success})
 			{:status :error})))

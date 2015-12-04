@@ -18,12 +18,19 @@
 (def comment-details-table-name (:dynamo-comment-details-table-name env))
 (def notification-table (:dynamo-usernotification-table-name env))
 
-(def queue (:input-queue env))
+(def timeline-queue (:timeline-queue env))
+(def notification-queue (:notification-queue env))
 
-(defn queue-event [evt]
+(defn queue-event [queue evt]
   (let [v (-> (ch/generate-string evt)
               msg/pack)]
     (wcar redis-conn (car-mq/enqueue queue v))))
+
+(defn queue-notification [evt]
+  (queue-event notification-queue evt))
+
+(defn queue-timeline-event [evt]
+	(queue-event timeline-queue evt))
 
 (defn retrieve-dynamo-notifications [user_id]
 	(far/query dynamo-opts notification-table {:user_id [:eq user_id]}))

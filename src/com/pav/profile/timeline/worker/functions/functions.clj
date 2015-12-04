@@ -19,6 +19,8 @@
 
 (def user-table (:dynamo-user-table-name env))
 (def timeline-table (:dynamo-usertimeline-table-name env))
+(def notification-table (:dynamo-usernotification-table-name env))
+(def comment-details-table (:dynamo-comment-details-table-name env))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -54,26 +56,21 @@
       (add-users-first-last-names (:author evt))
       (assoc :timestamp (.getTime (Date.)))))
 
+(defn parse-comment-reply-notification [evt]
+	(let [{author :author} (far/get-item client-opts comment-details-table {:comment_id (:parent_id evt)}
+												 {:return ["author"]})]
+		(if author
+			(->> (assoc evt :user_id author :read false)
+				   (add-bill-title es-conn "congress")))))
+
 (defn unpack-event [evt]
   (-> (msg/unpack evt)
       (ch/parse-string true)))
 
-(defn publish-to-dynamo-timeline [evt]
+(defn publish-to-dynamo-timeline [timeline-event]
   (try
-    (far/put-item client-opts timeline-table evt)
-    (catch Exception e (log/error (str "Error writing to table " timeline-table ", with " evt ", " e)))))
+    (far/put-item client-opts timeline-table timeline-event)
+    (catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
 
-(defn publish-dynamo-notification [dynamo-opts notification-table notification]
-	(far/put-item dynamo-opts notification-table notification))
-
-(defn publish-reply-notifications [dynamo-opts notification-table comment-details-table {:keys [parent_id] :as evt}]
-	(if parent_id
-		(let [parent-comment (far/get-item dynamo-opts comment-details-table {:comment_id parent_id})]
-			(when parent-comment
-				(let [notification (new-comment-reply-notification parent-comment evt)]
-					(publish-dynamo-notification dynamo-opts notification-table notification))))))
-
-(defn publish-user-notifications [dynamo-opts notification-table comment-details-table {:keys [type] :as evt}]
-	(case type
-		"comment" (publish-reply-notifications dynamo-opts notification-table comment-details-table evt)
-		nil))
+(defn publish-dynamo-notification [notification-event]
+	(far/put-item client-opts notification-table notification-event))

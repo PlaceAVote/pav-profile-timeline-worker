@@ -22,17 +22,19 @@
   :main com.pav.profile.timeline.worker.main
   :javac-options ["-target" "1.8" "-source" "1.8"]
   :profiles {:uberjar {:aot [com.pav.profile.timeline.worker.main]}
-             :dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
-                                  [midje "1.7.0"]]
-                   :env {:redis-url "redis://127.0.0.1:6379"
-                         :es-url "http://localhost:9200"
-                         :dynamo-endpoint "http://localhost:8000"
-                         :dynamo-user-table-name "users"
-                         :dynamo-usertimeline-table-name "usertimeline"
-												 :dynamo-usernotification-table-name "usernotifications"
-                         :dynamo-comment-details-table-name "comment-details"
-                         :access-key "Whatever"
-                         :secret-key "whatever"
-                         :input-queue "redismq::queue_name::user-timelineevent-input"}
-                   :source-paths ["dev" "src"]
-                   :plugins [[lein-midje "3.1.3"]]}})
+						 :dev     {:dependencies [[org.clojure/tools.namespace "0.2.4"]
+																			[midje "1.7.0"]]
+											 :env          {:redis-url                          "redis://127.0.0.1:6379"
+																			:es-url                             "http://localhost:9200"
+																			:dynamo-endpoint                    "http://localhost:8000"
+																			:dynamo-user-table-name             "users"
+																			:dynamo-usertimeline-table-name     "usertimeline"
+																			:dynamo-usernotification-table-name "usernotifications"
+																			:dynamo-comment-details-table-name  "comment-details"
+																			:access-key                         "Whatever"
+																			:secret-key                         "whatever"
+																			:timeline-queue                     "redismq::queue_name::user-timelineevent-queue"
+																			:notification-queue									"redismq::queue_name::user-notification-queue"
+																			:email-notification-queue					  "redismq::queue_name::email-notification-queue"}
+											 :source-paths ["dev" "src"]
+											 :plugins      [[lein-midje "3.1.3"]]}})

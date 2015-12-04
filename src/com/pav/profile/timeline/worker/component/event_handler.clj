@@ -3,15 +3,13 @@
 						[taoensso.carmine.message-queue :as car-mq]
 						[msgpack.clojure-extensions]
 						[clojure.tools.logging :as log]
-						[com.pav.profile.timeline.worker.functions.functions :refer [unpack-event
-																																				 publish-to-dynamo-timeline]]))
+						[com.pav.profile.timeline.worker.functions.functions :refer [unpack-event]]))
 
 (defn process-events [redis-url input-queue message-handler number-of-consumers]
   (let [redis-conn {:spec {:uri redis-url}}]
     (car-mq/worker redis-conn input-queue
                    {:handler  (fn [{:keys [message]}]
                                 (let [evt (unpack-event message)]
-																	(log/info "Event Message: " evt)
 																	(message-handler evt)))
                     :monitor  (car-mq/monitor-fn input-queue 1000 5000)
                     :nthreads number-of-consumers})))
@@ -26,7 +24,7 @@
     (update-in component [:worker] car-mq/stop)))
 
 (defn new-redis-queue-consumer [redis-url input-queue message-handler num-of-consumers]
-  (map->RedisQueueConsumer {:redis-url redis-url
-                            :input-queue input-queue
-                            :message-handler message-handler
-                            :num-of-consumers num-of-consumers}))
+  (map->RedisQueueConsumer {:redis-url        redis-url
+														:input-queue   		input-queue
+														:message-handler  message-handler
+														:num-of-consumers num-of-consumers}))

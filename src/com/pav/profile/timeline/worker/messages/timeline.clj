@@ -59,7 +59,3 @@
 (s/defn new-followedby-event :- FollowedByUserEvent
 	[{:keys [event_id type follower_id timestamp user_id] :as event}]
 	(FollowedByUserEvent. event_id type follower_id timestamp user_id))
-
-{:event_id "321312" :bill_id "hr2-114" :author_img_url "http://img.url"
- :author "user101" :body "Comment Body" :parent_id nil :has_children false
- :score 0 :type "likecomment" :user_id "user102"}
