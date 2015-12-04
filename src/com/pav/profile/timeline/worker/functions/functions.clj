@@ -7,7 +7,8 @@
             [msgpack.clojure-extensions]
             [environ.core :refer [env]]
 						[clojure.tools.logging :as log]
-						[taoensso.carmine :as car :refer (wcar)])
+						[taoensso.carmine :as car :refer (wcar)]
+						[clj-http.client :as client])
   (:import (java.util Date)))
 
 (def es-conn (esr/connect (:es-url env)))
@@ -21,6 +22,9 @@
 (def notification-table (:dynamo-usernotification-table-name env))
 (def comment-details-table (:dynamo-comment-details-table-name env))
 
+(def mandril-api-key (:mandril-api-key env))
+(def comment-reply-template (:mandril-comment-template env))
+
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
       :_source :official_title))
@@ -31,6 +35,10 @@
 (defn add-users-first-last-names [evt user_id]
   (-> (far/get-item client-opts user-table {:user_id user_id} {:attrs [:first_name :last_name]})
       (merge evt)))
+
+(defn add-users-email [{:keys [user_id] :as evt}]
+	(-> (far/get-item client-opts user-table {:user_id user_id} {:attrs [:email]})
+		(merge evt)))
 
 (defn parse-vote [evt]
   (add-bill-title es-conn "congress" evt))
@@ -62,6 +70,10 @@
 			(->> (assoc evt :user_id author :read false)
 				   (add-bill-title es-conn "congress")))))
 
+(defn parse-comment-reply-email-notification [evt]
+	(-> (parse-comment-reply-notification evt)
+		  (add-users-email)))
+
 (defn unpack-event [evt]
   (-> (msg/unpack evt)
       (ch/parse-string true)))
@@ -73,3 +85,31 @@
 
 (defn publish-dynamo-notification [notification-event]
 	(far/put-item client-opts notification-table notification-event))
+
+(defn build-email-header [template]
+	{:key mandril-api-key :template_name template
+	 :template_content [] :async true})
+
+(defn build-comment-reply-body
+	[message {:keys [email author_first_name author_last_name
+									 author_img_url bill_title body] :as event}]
+	(-> {:message {:to                [{:email email :type "to"}]
+								 :important         false
+								 :inline_css        true
+								 :merge             true
+								 :merge_language    "handlebars"
+								 :global_merge_vars [{:name "author_first_name" :content author_first_name}
+																		 {:name "author_last_name" :content author_last_name}
+																		 {:name "author_img_url" :content author_img_url}
+																		 {:name "bill_title" :content bill_title}
+																		 {:name "body" :content body}]}}
+		(merge message)))
+
+(defn publish-comment-reply-email [event]
+	(let [body (-> (build-email-header comment-reply-template)
+								 (build-comment-reply-body event)
+							   ch/generate-string)]
+		(log/info "Email Body being sent to mandril " body)
+		(client/post "https://mandrillapp.com/api/1.0/messages/send-template.json"
+			{:body body})))
+

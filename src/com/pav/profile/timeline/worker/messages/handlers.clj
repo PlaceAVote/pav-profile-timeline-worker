@@ -27,3 +27,12 @@
 			(do (f/publish-dynamo-notification event)
 					{:status :success})
 			{:status :error})))
+
+(defn email-notification-handler [{:keys [type] :as event}]
+	(let [event (case type
+								"commentreply" (ne/new-comment-reply-email-notification (f/parse-comment-reply-email-notification event))
+								nil)]
+		(if event
+			(do (f/publish-comment-reply-email event)
+					{:status :success})
+			{:status :error})))

@@ -16,7 +16,8 @@
                  [clojure-msgpack "1.1.2"]
                  [clojurewerkz/elastisch "2.1.0"]
                  [environ "1.0.0"]
-                 [prismatic/schema "1.0.3"]]
+                 [prismatic/schema "1.0.3"]
+								 [clj-http "2.0.0"]]
   :plugins [[lein-environ "1.0.0"]]
   :min-lein-version "2.0.0"
   :main com.pav.profile.timeline.worker.main
@@ -35,6 +36,8 @@
 																			:secret-key                         "whatever"
 																			:timeline-queue                     "redismq::queue_name::user-timelineevent-queue"
 																			:notification-queue									"redismq::queue_name::user-notification-queue"
-																			:email-notification-queue					  "redismq::queue_name::email-notification-queue"}
+																			:email-notification-queue					  "redismq::queue_name::email-notification-queue"
+																			:mandril-api-key 										"key"
+																			:mandril-comment-template						"comment-reply-template-dev"}
 											 :source-paths ["dev" "src"]
 											 :plugins      [[lein-midje "3.1.3"]]}})
