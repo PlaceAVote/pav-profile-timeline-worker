@@ -110,6 +110,7 @@
 								 (build-comment-reply-body event)
 							   ch/generate-string)]
 		(log/info "Email Body being sent to mandril " body)
-		(client/post "https://mandrillapp.com/api/1.0/messages/send-template.json"
-			{:body body})))
+		(try
+			(client/post "https://mandrillapp.com/api/1.0/messages/send-template.json" {:body body})
+		(catch Exception e (log/error "Error sending email " e)))))
 
