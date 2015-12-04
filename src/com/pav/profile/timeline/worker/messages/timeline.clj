@@ -42,20 +42,24 @@
 	[event_id 					:- s/Str
 	 type 							:- s/Str
 	 following_id				:- s/Str
+	 first_name         :- s/Str
+	 last_name          :- s/Str
 	 timestamp 					:- Long
 	 user_id 	 					:- s/Str])
 
 (s/defn new-following-event :- FollowingUserEvent
-	[{:keys [event_id type following_id timestamp user_id] :as event}]
-	(FollowingUserEvent. event_id type following_id timestamp user_id))
+	[{:keys [event_id type following_id first_name last_name timestamp user_id] :as event}]
+	(FollowingUserEvent. event_id type following_id first_name last_name timestamp user_id))
 
 (s/defrecord FollowedByUserEvent
 	[event_id 					:- s/Str
 	 type 							:- s/Str
 	 follower_id				:- s/Str
+	 first_name         :- s/Str
+	 last_name          :- s/Str
 	 timestamp 					:- Long
 	 user_id 	 					:- s/Str])
 
 (s/defn new-followedby-event :- FollowedByUserEvent
-	[{:keys [event_id type follower_id timestamp user_id] :as event}]
-	(FollowedByUserEvent. event_id type follower_id timestamp user_id))
+	[{:keys [event_id type follower_id first_name last_name timestamp user_id] :as event}]
+	(FollowedByUserEvent. event_id type follower_id first_name last_name timestamp user_id))

@@ -39,13 +39,13 @@
 
 (fact "Construct Timeline Event Message, with valid following event payload"
 	(let [following-event {:event_id "213213" :type "followinguser" :user_id "user101" :following_id "user102"
-												 :timestamp (.getTime (Date.))}]
+												 :timestamp (.getTime (Date.)) :first_name "John" :last_name "Rambo"}]
 		(s/with-fn-validation (te/new-following-event following-event)) => following-event
 		(s/with-fn-validation (te/new-following-event (dissoc following-event :user_id))) => (throws RuntimeException)))
 
 (fact "Construct Timeline Event Message, with valid followedby event payload"
 	(let [followedby-event {:event_id "213213" :type "followedbyuser" :user_id "user102" :follower_id "user101"
-												 :timestamp (.getTime (Date.))}]
+												 :timestamp (.getTime (Date.)) :first_name "John" :last_name "Rambo"}]
 		(s/with-fn-validation (te/new-followedby-event followedby-event)) => followedby-event
 		(s/with-fn-validation (te/new-followedby-event (dissoc followedby-event :user_id))) => (throws RuntimeException)))
 
