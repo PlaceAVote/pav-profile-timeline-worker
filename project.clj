@@ -15,7 +15,8 @@
                                                     com.sun.jmx/jmxri]]
                  [clojure-msgpack "1.1.2"]
                  [clojurewerkz/elastisch "2.1.0"]
-                 [environ "1.0.0"]]
+                 [environ "1.0.0"]
+                 [prismatic/schema "1.0.3"]]
   :plugins [[lein-environ "1.0.0"]]
   :min-lein-version "2.0.0"
   :main com.pav.profile.timeline.worker.main

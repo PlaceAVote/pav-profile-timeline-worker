@@ -18,6 +18,7 @@
                   :endpoint (:dynamo-endpoint env)})
 
 (def user-table (:dynamo-user-table-name env))
+(def timeline-table (:dynamo-usertimeline-table-name env))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -57,20 +58,10 @@
   (-> (msg/unpack evt)
       (ch/parse-string true)))
 
-(defn parse-event [{:keys [type] :as event}]
-	(case type
-		"vote" (parse-vote event)
-		"comment" (parse-comment event)
-		"followinguser" (parse-followinguser event)
-		"followedbyuser" (parse-followedbyuser event)
-		"likecomment" (parse-like-comment event)
-		"dislikecomment" (parse-dislike-comment event)
-		nil))
-
-(defn publish-to-dynamo-timeline [client-opts table-name evt]
+(defn publish-to-dynamo-timeline [evt]
   (try
-    (far/put-item client-opts table-name evt)
-    (catch Exception e (log/error (str "Error writing to table " table-name ", with " evt ", " e)))))
+    (far/put-item client-opts timeline-table evt)
+    (catch Exception e (log/error (str "Error writing to table " timeline-table ", with " evt ", " e)))))
 
 (defn publish-dynamo-notification [dynamo-opts notification-table notification]
 	(far/put-item dynamo-opts notification-table notification))
