@@ -33,7 +33,9 @@
             (queue-timeline-event comment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user101")) => (contains (assoc comment-evt
-																																				:bill_title hr2-114-title)))
+																																				:bill_title hr2-114-title
+																																				:liked false
+																																				:disliked false)))
           (catch Exception e (println e))
           (finally
             (user/stop))))
@@ -72,7 +74,9 @@
             (queue-timeline-event likecomment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user102")) => (contains (assoc likecomment-evt
-																																				:bill_title hr2-114-title)))
+																																				:bill_title hr2-114-title
+																																				:liked true
+																																				:disliked false)))
           (catch Exception e (println e))
           (finally
             (user/stop))))
@@ -86,7 +90,9 @@
             (queue-timeline-event likecomment-evt)
             (Thread/sleep 4000)
             (first (retrieve-dynamo-timeline "user102")) => (contains (assoc likecomment-evt
-																																				:bill_title hr2-114-title)))
+																																				:bill_title hr2-114-title
+																																				:liked false
+																																				:disliked true)))
           (catch Exception e (println e))
           (finally
             (user/stop))))

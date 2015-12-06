@@ -31,7 +31,9 @@
 											 :parent_id nil
 											 :score 0
 											 :timestamp  (.getTime (Date.))
-											 :user_id "user101"}
+											 :user_id "user101"
+											 :liked false
+											 :disliked false}
 				comment-event-with-parent_id (assoc comment-event :parent_id "2312321")]
 		(s/with-fn-validation (te/new-comment-event comment-event)) => comment-event
 		(s/with-fn-validation (te/new-comment-event comment-event-with-parent_id)) => comment-event-with-parent_id
@@ -64,12 +66,14 @@
 											:parent_id nil
 											:score 0
 											:timestamp  (.getTime (Date.))
-											:user_id "user101"}]
+											:user_id "user101"
+											:liked false
+											:disliked false}]
 		(s/with-fn-validation (te/new-comment-event likedcomment)) => likedcomment
 		(s/with-fn-validation (te/new-comment-event (dissoc likedcomment :user_id))) => (throws RuntimeException)))
 
 (fact "Construct Timeline Event Message, with valid disliked comment event payload"
-	(let [likedcomment {:event_id   "asdas"
+	(let [dislikedcomment {:event_id   "asdas"
 											:type       "dislikecomment"
 											:author "user101"
 											:author_first_name "john"
@@ -83,6 +87,8 @@
 											:parent_id nil
 											:score 0
 											:timestamp  (.getTime (Date.))
-											:user_id "user101"}]
-		(s/with-fn-validation (te/new-comment-event likedcomment)) => likedcomment
-		(s/with-fn-validation (te/new-comment-event (dissoc likedcomment :user_id))) => (throws RuntimeException)))
+											:user_id "user101"
+										 	:liked false
+											:disliked false}]
+		(s/with-fn-validation (te/new-comment-event dislikedcomment)) => dislikedcomment
+		(s/with-fn-validation (te/new-comment-event (dissoc dislikedcomment :user_id))) => (throws RuntimeException)))

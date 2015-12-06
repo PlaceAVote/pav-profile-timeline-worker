@@ -30,13 +30,15 @@
 	 parent_id 					:- (s/maybe s/Str)
 	 score							:- s/Int
 	 timestamp 					:- Long
-	 user_id 	 					:- s/Str])
+	 user_id 	 					:- s/Str
+	 liked             	:- s/Bool
+	 disliked						:- s/Bool])
 
 (s/defn new-comment-event :- CommentEvent
 	[{:keys [event_id type author author_first_name author_last_name author_img_url bill_id bill_title body comment_id
-					 has_children parent_id score timestamp user_id] :as event}]
+					 has_children parent_id score timestamp user_id liked disliked] :as event}]
 	(CommentEvent. event_id type author author_first_name author_last_name author_img_url bill_id bill_title body
-		comment_id has_children parent_id score timestamp user_id))
+		comment_id has_children parent_id score timestamp user_id liked disliked))
 
 (s/defrecord FollowingUserEvent
 	[event_id 					:- s/Str

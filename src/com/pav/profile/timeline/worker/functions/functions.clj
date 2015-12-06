@@ -45,6 +45,7 @@
 
 (defn parse-comment [evt]
   (-> (add-bill-title es-conn "congress" evt)
+		  (merge {:liked false :disliked false})
       (assoc :score 0 :user_id (:author evt))))
 
 (defn parse-followinguser [evt]
@@ -56,12 +57,14 @@
 (defn parse-like-comment [evt]
   (-> (add-bill-title es-conn "congress" evt)
       (add-users-first-last-names (:author evt))
-      (assoc :timestamp (.getTime (Date.)))))
+      (assoc :timestamp (.getTime (Date.)))
+			(merge {:liked true :disliked false})))
 
 (defn parse-dislike-comment [evt]
   (-> (add-bill-title es-conn "congress" evt)
       (add-users-first-last-names (:author evt))
-      (assoc :timestamp (.getTime (Date.)))))
+      (assoc :timestamp (.getTime (Date.)))
+			(merge {:liked false :disliked true})))
 
 (defn parse-comment-reply-notification [evt]
 	(let [{author :author} (far/get-item client-opts comment-details-table {:comment_id (:parent_id evt)}
