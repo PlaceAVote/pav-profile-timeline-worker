@@ -6,13 +6,13 @@
 						[clojure.tools.logging :as log]))
 
 (defn parse-and-persist [{:keys [dynamo-opts es-conn]}
-												 {:keys [comment-details-table user-table notification-table]}
+												 {:keys [comment-details-table notification-table]}
 												 {:keys [type] :as event}]
 	(let [event (case type
 								"commentreply" (ne/new-comment-reply-notification
-																 (f/parse-comment-reply-email-notification
+																 (f/parse-comment-reply-notification
 																	 es-conn dynamo-opts
-																	 comment-details-table user-table event))
+																	 comment-details-table event))
 								nil)]
 		(if event
 			(do (f/publish-dynamo-notification dynamo-opts notification-table event)
