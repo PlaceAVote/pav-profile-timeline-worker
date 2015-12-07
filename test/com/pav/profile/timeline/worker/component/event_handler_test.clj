@@ -133,4 +133,5 @@
 				(first (retrieve-dynamo-notifications "user102")) => (contains expected-reply-notification))
 			(catch Exception e (println e))
 			(finally
-				(user/stop)))))
+				(user/stop))))
+	)
