@@ -1,29 +1,14 @@
 (ns com.pav.profile.timeline.worker.functions.functions
   (:require [clojurewerkz.elastisch.rest.document :as esd]
-            [clojurewerkz.elastisch.rest :as esr]
             [taoensso.faraday :as far]
             [cheshire.core :as ch]
             [msgpack.core :as msg]
             [msgpack.clojure-extensions]
             [environ.core :refer [env]]
 						[clojure.tools.logging :as log]
-						[taoensso.carmine :as car :refer (wcar)]
+						[taoensso.carmine :refer (wcar)]
 						[clj-http.client :as client])
   (:import (java.util Date)))
-
-(def es-conn (esr/connect (:es-url env)))
-
-(def client-opts {:access-key (:access-key env)
-                  :secret-key (:secret-key env)
-                  :endpoint (:dynamo-endpoint env)})
-
-(def user-table (:dynamo-user-table-name env))
-(def timeline-table (:dynamo-usertimeline-table-name env))
-(def notification-table (:dynamo-usernotification-table-name env))
-(def comment-details-table (:dynamo-comment-details-table-name env))
-
-(def mandril-api-key (:mandril-api-key env))
-(def comment-reply-template (:mandril-comment-template env))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -32,74 +17,74 @@
 (defn add-bill-title [es-conn index event]
   (assoc event :bill_title (retrieve-bill-title es-conn index (:bill_id event))))
 
-(defn add-users-first-last-names [evt user_id]
-  (-> (far/get-item client-opts user-table {:user_id user_id} {:attrs [:first_name :last_name]})
+(defn add-users-first-last-names [evt dynamo-opts user-table user_id]
+  (-> (far/get-item dynamo-opts user-table {:user_id user_id} {:attrs [:first_name :last_name]})
       (merge evt)))
 
-(defn add-users-email [{:keys [user_id] :as evt}]
-	(-> (far/get-item client-opts user-table {:user_id user_id} {:attrs [:email]})
+(defn add-users-email [{:keys [user_id] :as evt} dynamo-opts user-table]
+	(-> (far/get-item dynamo-opts user-table {:user_id user_id} {:attrs [:email]})
 		(merge evt)))
 
-(defn parse-vote [evt]
+(defn parse-vote [es-conn evt]
   (add-bill-title es-conn "congress" evt))
 
-(defn parse-comment [evt]
+(defn parse-comment [es-conn evt]
   (-> (add-bill-title es-conn "congress" evt)
 		  (merge {:liked false :disliked false})
       (assoc :score 0 :user_id (:author evt))))
 
-(defn parse-followinguser [evt]
-  (add-users-first-last-names evt (:following_id evt)))
+(defn parse-followinguser [dynamo-opts user-table evt]
+  (add-users-first-last-names evt dynamo-opts user-table (:following_id evt)))
 
-(defn parse-followedbyuser [evt]
-  (add-users-first-last-names evt (:follower_id evt)))
+(defn parse-followedbyuser [dynamo-opts user-table evt]
+  (add-users-first-last-names evt dynamo-opts user-table (:follower_id evt)))
 
-(defn parse-like-comment [evt]
+(defn parse-like-comment [es-conn dynamo-opts user-table evt]
   (-> (add-bill-title es-conn "congress" evt)
-      (add-users-first-last-names (:author evt))
+      (add-users-first-last-names dynamo-opts user-table (:author evt))
       (assoc :timestamp (.getTime (Date.)))
 			(merge {:liked true :disliked false})))
 
-(defn parse-dislike-comment [evt]
+(defn parse-dislike-comment [es-conn dynamo-opts user-table evt]
   (-> (add-bill-title es-conn "congress" evt)
-      (add-users-first-last-names (:author evt))
+      (add-users-first-last-names dynamo-opts user-table (:author evt))
       (assoc :timestamp (.getTime (Date.)))
 			(merge {:liked false :disliked true})))
 
-(defn parse-comment-reply-notification [evt]
-	(let [{author :author} (far/get-item client-opts comment-details-table {:comment_id (:parent_id evt)}
+(defn parse-comment-reply-notification [es-conn dynamo-opts comment-details-table evt]
+	(let [{author :author} (far/get-item dynamo-opts comment-details-table {:comment_id (:parent_id evt)}
 												 {:return ["author"]})]
 		(if author
 			(->> (assoc evt :user_id author :read false)
 				   (add-bill-title es-conn "congress")))))
 
-(defn parse-comment-reply-email-notification [evt]
-	(-> (parse-comment-reply-notification evt)
-		  (add-users-email)))
+(defn parse-comment-reply-email-notification [es-conn dynamo-opts comment-details-table user-table evt]
+	(-> (parse-comment-reply-notification es-conn dynamo-opts comment-details-table evt)
+		  (add-users-email dynamo-opts user-table)))
 
 (defn unpack-event [evt]
   (-> (msg/unpack evt)
       (ch/parse-string true)))
 
-(defn publish-to-dynamo-timeline [timeline-event]
+(defn publish-to-dynamo-timeline [dynamo-opts timeline-table timeline-event]
 	(log/info "Timeline event being published " timeline-event)
   (try
-    (far/put-item client-opts timeline-table timeline-event)
+    (far/put-item dynamo-opts timeline-table timeline-event)
 	(catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
 
-(defn publish-dynamo-notification [notification-event]
+(defn publish-dynamo-notification [dynamo-opts notification-table notification-event]
 	(log/info "Notification event being published " notification-event)
 	(try
-		(far/put-item client-opts notification-table notification-event)
+		(far/put-item dynamo-opts notification-table notification-event)
 	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
 
-(defn build-email-header [template]
-	{:key mandril-api-key :template_name template
+(defn build-email-header [api-key template]
+	{:key api-key :template_name template
 	 :template_content [] :async true})
 
 (defn build-comment-reply-body
 	[message {:keys [email author_first_name author_last_name
-									 author_img_url bill_title body] :as event}]
+									 author_img_url bill_title body]}]
 	(-> {:message {:to                [{:email email :type "to"}]
 								 :important         false
 								 :inline_css        true
@@ -112,8 +97,8 @@
 																		 {:name "body" :content body}]}}
 		(merge message)))
 
-(defn publish-comment-reply-email [event]
-	(let [body (-> (build-email-header comment-reply-template)
+(defn publish-comment-reply-email [api-key template event]
+	(let [body (-> (build-email-header api-key template)
 								 (build-comment-reply-body event)
 							   ch/generate-string)]
 		(log/info "Email Body being sent to mandril " body)
