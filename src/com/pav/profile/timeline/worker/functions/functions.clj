@@ -8,7 +8,7 @@
 						[clojure.tools.logging :as log]
 						[taoensso.carmine :refer (wcar)]
 						[clj-http.client :as client])
-  (:import (java.util Date)))
+  (:import (java.util Date UUID)))
 
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
@@ -22,8 +22,9 @@
       (merge evt)))
 
 (defn add-users-email [{:keys [user_id] :as evt} dynamo-opts user-table]
+	(log/info "EMAIL: " (far/get-item dynamo-opts user-table {:user_id user_id} {:attrs [:email]}))
 	(-> (far/get-item dynamo-opts user-table {:user_id user_id} {:attrs [:email]})
-		(merge evt)))
+		  (merge evt)))
 
 (defn parse-vote [es-conn evt]
   (add-bill-title es-conn "congress" evt))
@@ -66,16 +67,19 @@
   (-> (msg/unpack evt)
       (ch/parse-string true)))
 
+(defn add-event-id [evt]
+	(assoc evt :event_id (.toString (UUID/randomUUID))))
+
 (defn publish-to-dynamo-timeline [dynamo-opts timeline-table timeline-event]
 	(log/info "Timeline event being published " timeline-event)
   (try
-    (far/put-item dynamo-opts timeline-table timeline-event)
+    (far/put-item dynamo-opts timeline-table (add-event-id timeline-event))
 	(catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
 
 (defn publish-dynamo-notification [dynamo-opts notification-table notification-event]
 	(log/info "Notification event being published " notification-event)
 	(try
-		(far/put-item dynamo-opts notification-table notification-event)
+		(far/put-item dynamo-opts notification-table (add-event-id notification-event))
 	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
 
 (defn build-email-header [api-key template]
