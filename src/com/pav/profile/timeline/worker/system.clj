@@ -5,7 +5,8 @@
             [com.pav.profile.timeline.worker.component.redis-event-consumer :refer [new-redis-queue-consumer]]
 						[com.pav.profile.timeline.worker.component.timeline-event-handler :refer [new-timeline-event-handler]]
 						[com.pav.profile.timeline.worker.component.notification-event-handler :refer [new-notification-event-handler]]
-						[com.pav.profile.timeline.worker.component.email-event-handler :refer [new-email-event-handler]]))
+						[com.pav.profile.timeline.worker.component.email-event-handler :refer [new-email-event-handler]]
+						[com.pav.profile.timeline.worker.component.newsfeed-event-handler :refer [new-newsfeed-event-handler]]))
 
 (def es-conn (esr/connect (:es-url env)))
 
@@ -14,7 +15,8 @@
 									:endpoint (:dynamo-endpoint env)})
 
 (def connection-opts {:dynamo-opts client-opts
-											:es-conn es-conn})
+											:es-conn     es-conn
+											:redis-conn  {:spec {:uri (:redis-url env)}}})
 
 (def dynamo-tables {:timeline-table        (:dynamo-usertimeline-table-name env)
 										:user-table            (:dynamo-user-table-name env)
@@ -27,11 +29,14 @@
 (defn new-system []
 	(component/system-map
 		:timeline-event-handler 		 (new-timeline-event-handler connection-opts dynamo-tables)
-		:notification-event-handler  (new-notification-event-handler connection-opts dynamo-tables)
+		:notification-event-handler  (new-notification-event-handler connection-opts dynamo-tables (:redis-notification-pubsub env))
 		:email-event-handler				 (new-email-event-handler connection-opts dynamo-tables mandril-opts)
+		:newsfeed-event-handler			 (new-newsfeed-event-handler connection-opts dynamo-tables)
 		:timeline-event-consumer 		 (component/using (new-redis-queue-consumer (:redis-url env) (:timeline-queue env) 3)
 																	 {:message-handler :timeline-event-handler})
 		:notification-event-consumer (component/using (new-redis-queue-consumer (:redis-url env) (:notification-queue env) 3)
 																	 {:message-handler :notification-event-handler})
+		:newsfeed-event-consumer		 (component/using (new-redis-queue-consumer (:redis-url env) (:newsfeed-notification-queue env) 3)
+																	 {:message-handler :newsfeed-event-handler})
 		:email-notification-worker 	 (component/using (new-redis-queue-consumer (:redis-url env) (:email-notification-queue env) 3)
 																	 {:message-handler :email-event-handler})))

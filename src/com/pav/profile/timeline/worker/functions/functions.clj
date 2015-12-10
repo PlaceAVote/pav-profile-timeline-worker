@@ -6,7 +6,7 @@
             [msgpack.clojure-extensions]
             [environ.core :refer [env]]
 						[clojure.tools.logging :as log]
-						[taoensso.carmine :refer (wcar)]
+						[taoensso.carmine :as car :refer (wcar)]
 						[clj-http.client :as client])
   (:import (java.util Date UUID)))
 
@@ -67,6 +67,9 @@
   (-> (msg/unpack evt)
       (ch/parse-string true)))
 
+(defn pack-event [evt]
+	(-> (ch/generate-string evt) msg/pack))
+
 (defn add-event-id [evt]
 	(assoc evt :event_id (.toString (UUID/randomUUID))))
 
@@ -81,6 +84,9 @@
 	(try
 		(far/put-item dynamo-opts notification-table (add-event-id notification-event))
 	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
+
+(defn publish-redis-notification [redis-conn redis-topic event]
+	(wcar redis-conn (car/publish redis-topic (pack-event event))))
 
 (defn build-email-header [api-key template]
 	{:key api-key :template_name template

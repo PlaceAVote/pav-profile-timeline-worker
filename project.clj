@@ -37,6 +37,8 @@
 																			:timeline-queue                     "redismq::queue_name::user-timelineevent-queue"
 																			:notification-queue									"redismq::queue_name::user-notification-queue"
 																			:email-notification-queue					  "redismq::queue_name::email-notification-queue"
+																			:newsfeed-notification-queue				"redismq::queue_name::user-newsfeed-queue"
+																			:redis-notification-pubsub					"redis::notifications::pubsub"
 																			:mandril-api-key 										"key"
 																			:mandril-comment-template						"comment-reply-template-dev"}
 											 :source-paths ["dev" "src"]
