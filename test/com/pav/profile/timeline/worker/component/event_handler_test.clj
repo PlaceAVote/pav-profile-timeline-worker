@@ -134,4 +134,23 @@
 			(catch Exception e (println e))
 			(finally
 				(user/stop))))
+
+	(fact "Publish comment reply event, if author is the same of parent comment, don't send notification message."
+		(try
+			(let [parent-comment {:comment_id "comment:1" :bill_id "hr2-114" :author "user102"
+														:author_first_name "John" :author_last_name "Rambo"
+														:timestamp (.getTime (Date.)) :has_children true :parent_id  nil
+														:body "I'm the parent" :score 1 }
+						comment-evt {:bill_id "hr2-114" :timestamp 14567 :author_img_url "http://img.url"
+												 :author "user102" :author_first_name "Peter" :author_last_name "Pan"
+												 :body "I'm the reply" :parent_id "comment:1" :has_children true :comment_id "comment:2"
+												 :score 0 :type "commentreply"}
+						_ (create-comment parent-comment)]
+				(user/go)
+				(queue-notification comment-evt)
+				(Thread/sleep 4000)
+				(first (retrieve-dynamo-notifications "user102")) => nil)
+			(catch Exception e (println e))
+			(finally
+				(user/stop))))
 	)

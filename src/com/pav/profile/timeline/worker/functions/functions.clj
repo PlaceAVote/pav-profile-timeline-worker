@@ -55,7 +55,7 @@
 (defn parse-comment-reply-notification [es-conn dynamo-opts comment-details-table evt]
 	(let [{author :author} (far/get-item dynamo-opts comment-details-table {:comment_id (:parent_id evt)}
 												 {:return ["author"]})]
-		(if author
+		(if (and author (not (= (:author evt) author)))
 			(->> (assoc evt :user_id author :read false)
 				   (add-bill-title es-conn "congress")))))
 
@@ -70,6 +70,9 @@
 (defn pack-event [evt]
 	(-> (ch/generate-string evt) msg/pack))
 
+(defn add-notification-id [evt]
+	(assoc evt :notification_id (.toString (UUID/randomUUID))))
+
 (defn add-event-id [evt]
 	(assoc evt :event_id (.toString (UUID/randomUUID))))
 
@@ -82,7 +85,7 @@
 (defn publish-dynamo-notification [dynamo-opts notification-table notification-event]
 	(log/info "Notification event being published " notification-event)
 	(try
-		(far/put-item dynamo-opts notification-table (add-event-id notification-event))
+		(far/put-item dynamo-opts notification-table (add-notification-id notification-event))
 	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
 
 (defn publish-redis-notification [redis-conn redis-topic event]

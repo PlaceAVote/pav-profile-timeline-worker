@@ -81,7 +81,10 @@
 			 :throughput {:read 5 :write 10}
 			 :block? true})
 		(far/create-table dynamo-opts notification-table [:user_id :s]
-			{:range-keydef [:timestamp :n]
+			{:gsindexes [{:name "notification_id-index"
+										:hash-keydef [:notification_id :s]
+										:throughput {:read 5 :write 10}}]
+       :range-keydef [:timestamp :n]
 			 :throughput {:read 5 :write 10}
 			 :block? true})
     (far/create-table dynamo-opts comment-details-table-name [:comment_id :s]
