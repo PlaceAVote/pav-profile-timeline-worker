@@ -10,6 +10,9 @@
 						[clj-http.client :as client])
   (:import (java.util Date UUID)))
 
+(defn add-event-id [evt]
+	(assoc evt :event_id (.toString (UUID/randomUUID))))
+
 (defn retrieve-bill-title [conn index bill_id]
   (-> (esd/get conn index "bill" bill_id)
       :_source :official_title))
@@ -56,7 +59,7 @@
 	(let [{author :author} (far/get-item dynamo-opts comment-details-table {:comment_id (:parent_id evt)}
 												 {:return ["author"]})]
 		(if (and author (not (= (:author evt) author)))
-			(->> (assoc evt :user_id author :read false)
+			(->> (assoc evt :user_id author :read false :notification_id (.toString (UUID/randomUUID)))
 				   (add-bill-title es-conn "congress")))))
 
 (defn parse-comment-reply-email-notification [es-conn dynamo-opts comment-details-table user-table evt]
@@ -70,22 +73,16 @@
 (defn pack-event [evt]
 	(-> (ch/generate-string evt) msg/pack))
 
-(defn add-notification-id [evt]
-	(assoc evt :notification_id (.toString (UUID/randomUUID))))
-
-(defn add-event-id [evt]
-	(assoc evt :event_id (.toString (UUID/randomUUID))))
-
 (defn publish-to-dynamo-timeline [dynamo-opts timeline-table timeline-event]
 	(log/info "Timeline event being published " timeline-event)
   (try
-    (far/put-item dynamo-opts timeline-table (add-event-id timeline-event))
+    (far/put-item dynamo-opts timeline-table timeline-event)
 	(catch Exception e (log/error (str "Error writing to table " timeline-table ", with " timeline-event ", " e)))))
 
 (defn publish-dynamo-notification [dynamo-opts notification-table notification-event]
 	(log/info "Notification event being published " notification-event)
 	(try
-		(far/put-item dynamo-opts notification-table (add-notification-id notification-event))
+		(far/put-item dynamo-opts notification-table notification-event)
 	(catch Exception e (log/error (str "Error writing to table " notification-table ", with " notification-event ", " e)))))
 
 (defn publish-redis-notification [redis-conn redis-topic event]

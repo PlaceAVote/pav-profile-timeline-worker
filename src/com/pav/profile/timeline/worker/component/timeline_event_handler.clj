@@ -17,7 +17,7 @@
 								"dislikecomment" (te/new-comment-event (f/parse-dislike-comment es-conn dynamo-opts user-table event))
 								nil)]
 		(if event
-			(do (f/publish-to-dynamo-timeline dynamo-opts timeline-table event)
+			(do (f/publish-to-dynamo-timeline dynamo-opts timeline-table (f/add-event-id event))
 					{:status :success})
 			{:status :error})))
 
