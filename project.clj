@@ -26,7 +26,8 @@
   :min-lein-version "2.0.0"
   :main com.pav.profile.timeline.worker.main
   :javac-options ["-target" "1.8" "-source" "1.8"]
-  :profiles {:uberjar {:aot [com.pav.profile.timeline.worker.main]}
+  :profiles {:uberjar {:aot [com.pav.profile.timeline.worker.main]
+                       :uberjar-name "pav-profile-timeline-worker.jar"}
 						 :dev     {:dependencies [[org.clojure/tools.namespace "0.2.4"]
 																			[midje "1.7.0"]]
 											 :env          {:redis-url                          "redis://127.0.0.1:6379"
