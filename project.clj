@@ -18,7 +18,11 @@
                  [environ "1.0.0"]
                  [prismatic/schema "1.0.3"]
 								 [clj-http "2.0.0"]]
-  :plugins [[lein-environ "1.0.0"]]
+  :plugins [[lein-environ "1.0.0"]
+            [lein-release "1.0.5"]]
+  :lein-release {:scm :git
+                 :deploy-via :lein-install
+                 :build-uberjar true}
   :min-lein-version "2.0.0"
   :main com.pav.profile.timeline.worker.main
   :javac-options ["-target" "1.8" "-source" "1.8"]
