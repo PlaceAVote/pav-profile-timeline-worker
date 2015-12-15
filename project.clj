@@ -1,4 +1,4 @@
-(defproject pav_profile_timeline_worker "0.1.0-SNAPSHOT"
+(defproject pav_profile_timeline_worker "0.1.0"
   :description "Process user activities from Redis and update the users timeline."
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
