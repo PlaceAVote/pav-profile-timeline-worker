@@ -94,7 +94,8 @@
 
 (defn build-comment-reply-body
 	[message {:keys [email author_first_name author_last_name
-									 author_img_url bill_title body]}]
+									 author_img_url bill_title body
+									 bill_id author]}]
 	(-> {:message {:to                [{:email email :type "to"}]
 								 :important         false
 								 :inline_css        true
@@ -103,7 +104,9 @@
 								 :global_merge_vars [{:name "author_first_name" :content author_first_name}
 																		 {:name "author_last_name" :content author_last_name}
 																		 {:name "author_img_url" :content author_img_url}
+																		 {:name "author_id" :content author}
 																		 {:name "bill_title" :content bill_title}
+																		 {:name "bill_id" :content bill_id}
 																		 {:name "body" :content body}]}}
 		(merge message)))
 
