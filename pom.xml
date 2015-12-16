@@ -3,7 +3,7 @@
   <groupId>pav_profile_timeline_worker</groupId>
   <artifactId>pav_profile_timeline_worker</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
   <name>pav_profile_timeline_worker</name>
   <description>Process user activities from Redis and update the users timeline.</description>
   <url>http://example.com/FIXME</url>
@@ -16,7 +16,7 @@
   <scm>
     <connection>scm:git:git://github.com/PlaceAVote/pav-profile-timeline-worker.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/PlaceAVote/pav-profile-timeline-worker.git</developerConnection>
-    <tag>da3d2d330d85ef2462a0107ba1ba1c8b0fd060e4
+    <tag>0dcb1a6a68d4acd3ee37476c30025d380e73d5dd
 </tag>
     <url>https://github.com/PlaceAVote/pav-profile-timeline-worker</url>
   </scm>
